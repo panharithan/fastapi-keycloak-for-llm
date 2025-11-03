@@ -109,6 +109,7 @@ def signup(data: SignupData = Body(...)):
     send_verification_email(email, verify_url)
 
     return {"message": "Signup successful! Please check your email to verify your account."}
+
 @app.get("/verify")
 def verify_email(token: str = Query(...)):
     if token not in verification_tokens:
@@ -116,6 +117,43 @@ def verify_email(token: str = Query(...)):
     user_id = verification_tokens.pop(token)
     keycloak_admin.update_user(user_id=user_id, payload={"emailVerified": True})
     return {"message": "✅ Email verified successfully! You can now log in."}
+
+"""
+Email Token life time settins in keycloak:
+->Override just the Email Verification
+1. Go to "llm" realm or your realm name and choose "Realm Settings"
+2. Scroll down to "Tokens" tab
+3. Override Action Tokens
+Find Email Verification
+Enter your desired time (e.g. 1440 minutes = 24 hours)
+4. Save changes
+"""
+@app.post("/resend-verification")
+def resend_verification(username: str = Body(..., embed=True)):
+    """Resend the verification email using username."""
+    users = keycloak_admin.get_users(query={"username": username})
+    if not users:
+        raise HTTPException(status_code=404, detail="❌ User not found")
+
+    # Find matching user (some realms return multiple)
+    user = next((u for u in users if u["username"].lower() == username.lower()), None)
+    if not user:
+        raise HTTPException(status_code=404, detail="❌ User not found")
+
+    email = user.get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="User does not have an email configured")
+
+    if user.get("emailVerified", False):
+        return {"message": "✅ Email is already verified."}
+
+    # Generate a new token and store mapping
+    token = secrets.token_urlsafe(32)
+    verification_tokens[token] = user["id"]
+    verify_url = f"http://localhost:8000/verify?token={token}"
+
+    send_verification_email(email, verify_url)
+    return {"message": f"📧 Verification email resent successfully to {email}!"}
 
 @app.get("/")
 def root():

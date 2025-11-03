@@ -34,6 +34,7 @@ CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 # UI
 API_URL = "http://localhost:8000/generate"
 SIGNUP_URL = "http://localhost:8000/signup"
+RESEND_URL = "http://localhost:8000/resend-verification"  # new backend endpoint
 
 # LLM
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
