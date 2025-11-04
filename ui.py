@@ -44,7 +44,7 @@ def on_signup_click(username, password, email, first_name, last_name):
         "last_name": last_name
     }
     try:
-        res = requests.post(RESEND_VERIFY_URL, json=payload)
+        res = requests.post(SIGNUP_URL, json=payload)
         data = res.json()
 
         if res.status_code == 200:
@@ -68,7 +68,8 @@ def on_resend_click(username):
     if not username:
         return "⚠️ Please enter your username first."
     try:
-        res = requests.post(RESEND_VERIFY_LINK, json={"username": username})
+        # ✅ FIXED: correct variable name (RESEND_VERIFY_URL)
+        res = requests.post(RESEND_VERIFY_URL, json={"username": username})
         data = res.json()
         if res.status_code == 200:
             return data.get("message", "✅ Verification email resent successfully.")

@@ -11,7 +11,7 @@ import gradio as gr
 from keycloak_utils import verify_token
 from llm import get_response
 from email_utils import send_verification_email
-from settings import keycloak_admin
+from settings import keycloak_admin, VERIFY_URL
 
 
 # -------------------------------
@@ -46,7 +46,7 @@ class SignupData(BaseModel):
 
     @field_validator("first_name", "last_name")
     def validate_names(cls, v, info):
-        field_name = info.field_name  # <-- get the name here
+        field_name = info.field_name
         if not re.match(r"^[A-Za-z]{2,30}$", v):
             raise ValueError(f"{field_name.replace('_', ' ').capitalize()} must be 2–30 letters (no digits or special symbols).")
         return v
@@ -67,9 +67,9 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     try:
         payload = verify_token(token)
         return payload
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
-
+    except Exception:
+        # Always raise this message regardless of internal error
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
 @app.get("/secure-endpoint")
 def secure_data(user: dict = Depends(get_current_user)):
@@ -100,16 +100,19 @@ def signup(data: SignupData = Body(...)):
 
     keycloak_admin.realm_name = "llm"
 
-    created = keycloak_admin.create_user({
-        "username": username,
-        "email": email,
-        "enabled": True,
-        "emailVerified": False,
-        "firstName": data.first_name,
-        "lastName": data.last_name,
-        "credentials": [{"type": "password", "value": password, "temporary": False}],
-        "requiredActions": []
-    })
+    try:
+        created = keycloak_admin.create_user({
+            "username": username,
+            "email": email,
+            "enabled": True,
+            "emailVerified": False,
+            "firstName": data.first_name,
+            "lastName": data.last_name,
+            "credentials": [{"type": "password", "value": password, "temporary": False}],
+            "requiredActions": []
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create user: {e}")
 
     # Extract user ID
     user_id = created.split("/")[-1] if isinstance(created, str) and created.startswith("/users/") else created
@@ -130,7 +133,7 @@ def signup(data: SignupData = Body(...)):
     # Verification token
     token = secrets.token_urlsafe(32)
     verification_tokens[token] = user_id
-    verify_url = f"http://localhost:8000/verify?token={token}"
+    verify_url = VERIFY_URL + token
     send_verification_email(email, verify_url)
 
     return {"message": "Signup successful! Please check your email to verify your account."}
@@ -147,10 +150,7 @@ def verify_email(token: str = Query(...)):
 
 @app.post("/resend-verification")
 def resend_verification(username: str = Body(..., embed=True)):
-    users = keycloak_admin.get_users(query={"username": username})
-    if not users:
-        raise HTTPException(status_code=404, detail="❌ User not found")
-
+    users = keycloak_admin.get_users()
     user = next((u for u in users if u["username"].lower() == username.lower()), None)
     if not user:
         raise HTTPException(status_code=404, detail="❌ User not found")
@@ -168,7 +168,6 @@ def resend_verification(username: str = Body(..., embed=True)):
 
     send_verification_email(email, verify_url)
     return {"message": f"📧 Verification email resent successfully to {email}!"}
-
 
 @app.get("/")
 def root():
@@ -204,4 +203,5 @@ def greet(name):
 gradio_app = gr.Interface(fn=greet, inputs="text", outputs="text")
 app = gr.mount_gradio_app(app, gradio_app, path="/")
 
-# Run: uvicorn app:app --reload --host 0.0.0.0 --port 8000
+# Run with:
+# uvicorn app:app --reload --host 0.0.0.0 --port 8000
