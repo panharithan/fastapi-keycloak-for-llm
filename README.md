@@ -41,3 +41,11 @@ Find Email Verification
 Enter your desired time (e.g. 1440 minutes = 24 hours)
 4. Save changes
 """
+
+Configure Keycloak's Bruteforce protection
+	1.	Login to the Keycloak Admin Console
+	2.	Go to your realm (e.g. llm)
+	3.	Navigate to
+Realm Settings → Security Defenses → Brute Force Detection
+	4.	Turn “Enabled” → ✅ ON
+	5.	Configure these options: Lockout Temporarily and the following setings e.g Max Login Failure (check docs for more)

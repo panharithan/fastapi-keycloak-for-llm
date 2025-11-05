@@ -13,15 +13,15 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Keycloak
+KEYCLOAK_URL = "http://localhost:8080"
 keycloak_admin = KeycloakAdmin(
-    server_url="http://localhost:8080/",
+    server_url=KEYCLOAK_URL,
     username=os.getenv("KEYCLOAK_ADMIN_USERNAME"),
     password=os.getenv("KEYCLOAK_ADMIN_PASSWORD"),
     realm_name=os.getenv("KEYCLOAK_REALM"),
     client_id="admin-cli",
     verify=True
 )
-KEYCLOAK_URL = "http://localhost:8080"
 REALM = "llm"
 ISSUER = f"{KEYCLOAK_URL}/realms/{REALM}"
 ENCRYPTION_ALGO = "RS256"
@@ -32,9 +32,15 @@ CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 
 # UI
-API_URL = "http://localhost:8000/generate"
-SIGNUP_URL = "http://localhost:8000/signup"
-RESEND_URL = "http://localhost:8000/resend-verification"  # new backend endpoint
+BASE_URL = "http://localhost:8000"
+API_URL = f"{BASE_URL}/generate"
+SIGNUP_URL = f"{BASE_URL}/signup"
+LOGIN_URL = f"{BASE_URL}/login"
+VERIFY_URL = f"{BASE_URL}/verify?token="
+KEYCLOAK_TOKEN_URL = f"{KEYCLOAK_URL}/realms/{REALM}/protocol/openid-connect/token"
+RESEND_VERIFY_URL = f"{BASE_URL}/resend-verification" # Single resend verification URL
+RESEND_URL = RESEND_VERIFY_URL # Optional alias (only if some older code still refers to it)
+
 
 # LLM
 OLLAMA_API_URL = "http://localhost:11434/api/generate"

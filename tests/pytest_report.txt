@@ -1,0 +1,64 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.11.3, pytest-8.4.2, pluggy-1.6.0 -- /Users/panharith/Documents/code/python/venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/panharith/Documents/code/python/fastapi-keycloak-for-llm
+plugins: mock-3.15.1, asyncio-1.2.0, anyio-4.11.0, cov-7.0.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 46 items
+
+tests/test_app.py::test_decode_jwt_invalid_structure PASSED              [  2%]
+tests/test_app.py::test_decode_jwt_invalid_base64 PASSED                 [  4%]
+tests/test_app.py::test_decode_jwt_valid PASSED                          [  6%]
+tests/test_app.py::test_login_email_not_verified PASSED                  [  8%]
+tests/test_app.py::test_login_userinfo_missing_email_verified PASSED     [ 10%]
+tests/test_app.py::test_login_userinfo_fallback_unverified PASSED        [ 13%]
+tests/test_app.py::test_signup_user_not_found_after_creation PASSED      [ 15%]
+tests/test_app.py::test_signup_role_not_found PASSED                     [ 17%]
+tests/test_app.py::test_resend_verification_already_verified PASSED      [ 19%]
+tests/test_app.py::test_verify_invalid_token PASSED                      [ 21%]
+tests/test_app.py::test_validation_handler_custom_format PASSED          [ 23%]
+tests/test_app.py::test_greet_function PASSED                            [ 26%]
+tests/test_app_extra.py::test_secure_endpoint_unauthenticated PASSED     [ 28%]
+tests/test_app_extra.py::test_signup_keycloak_create_user_failure PASSED [ 30%]
+tests/test_app_extra.py::test_signup_user_not_found_after_creation PASSED [ 32%]
+tests/test_app_extra.py::test_signup_role_not_found PASSED               [ 34%]
+tests/test_app_extra.py::test_verify_invalid_token PASSED                [ 36%]
+tests/test_app_extra.py::test_resend_verification_user_not_found PASSED  [ 39%]
+tests/test_app_extra.py::test_resend_verification_no_email PASSED        [ 41%]
+tests/test_app_extra.py::test_resend_verification_email_already_verified PASSED [ 43%]
+tests/test_app_extra.py::test_validation_exception_handler PASSED        [ 45%]
+tests/test_app_extra.py::test_gradio_ui_root PASSED                      [ 47%]
+tests/test_app_extra.py::test_invalid_username_pattern PASSED            [ 50%]
+tests/test_app_extra.py::test_invalid_password_missing_uppercase PASSED  [ 52%]
+tests/test_app_extra.py::test_invalid_first_name_pattern PASSED          [ 54%]
+tests/test_app_extra.py::test_invalid_last_name_pattern PASSED           [ 56%]
+tests/test_app_extra.py::test_get_current_user_invalid_token PASSED      [ 58%]
+tests/test_app_extra.py::test_decode_jwt_invalid_structure PASSED        [ 60%]
+tests/test_app_extra.py::test_resend_verification_success PASSED         [ 63%]
+tests/test_app_extra.py::test_validation_exception_handler_direct PASSED [ 65%]
+tests/test_app_extra.py::test_signupdata_valid_data PASSED               [ 67%]
+tests/test_app_extra.py::test_get_current_user_success PASSED            [ 69%]
+tests/test_app_extra.py::test_decode_jwt_success PASSED                  [ 71%]
+tests/test_app_extra.py::test_signupdata_valid_first_and_last_name PASSED [ 73%]
+tests/test_app_extra.py::test_get_current_user_exception_path PASSED     [ 76%]
+tests/test_app_extra.py::test_decode_jwt_invalid_base64_exception PASSED [ 78%]
+tests/test_app_extra.py::test_resend_verification_token_assignment PASSED [ 80%]
+tests/test_app_extra.py::test_username_too_short_or_long PASSED          [ 82%]
+tests/test_app_extra.py::test_password_missing_requirements PASSED       [ 84%]
+tests/test_app_extra.py::test_names_with_invalid_chars PASSED            [ 86%]
+tests/test_app_extra.py::test_resend_verification_send_email_failure PASSED [ 89%]
+tests/test_app_extra.py::test_validation_exception_handler_no_errors PASSED [ 91%]
+tests/test_auth.py::test_generate_text PASSED                            [ 93%]
+tests/test_llm.py::test_generate_text PASSED                             [ 95%]
+tests/test_verification.py::test_resend_verification_success PASSED      [ 97%]
+tests/test_verification.py::test_resend_verification_user_not_found PASSED [100%]
+
+================================ tests coverage ================================
+_______________ coverage: platform darwin, python 3.11.3-final-0 _______________
+
+Name     Stmts   Miss  Cover   Missing
+--------------------------------------
+app.py     172     11    94%   80, 139, 218-225, 232-234
+--------------------------------------
+TOTAL      172     11    94%
+============================== 46 passed in 2.67s ==============================
