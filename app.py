@@ -1,5 +1,8 @@
 import secrets
 import re
+import base64
+import json
+import requests
 from fastapi import FastAPI, Depends, HTTPException, status, Query, Body
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.exceptions import RequestValidationError
@@ -11,7 +14,7 @@ import gradio as gr
 from keycloak_utils import verify_token
 from llm import get_response
 from email_utils import send_verification_email
-from settings import keycloak_admin, VERIFY_URL
+from settings import keycloak_admin, VERIFY_URL, KEYCLOAK_URL, REALM, CLIENT_ID, CLIENT_SECRET, KEYCLOAK_TOKEN_URL
 
 
 # -------------------------------
@@ -51,6 +54,7 @@ class SignupData(BaseModel):
             raise ValueError(f"{field_name.replace('_', ' ').capitalize()} must be 2–30 letters (no digits or special symbols).")
         return v
 
+
 # -------------------------------
 # App Initialization
 # -------------------------------
@@ -68,8 +72,8 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         payload = verify_token(token)
         return payload
     except Exception:
-        # Always raise this message regardless of internal error
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
 
 @app.get("/secure-endpoint")
 def secure_data(user: dict = Depends(get_current_user)):
@@ -90,6 +94,92 @@ async def generate_text(prompt: Prompt, user: dict = Depends(get_current_user)):
 
 
 # -------------------------------
+# JWT Decode Helper
+# -------------------------------
+def decode_jwt(token: str):
+    try:
+        parts = token.split('.')
+        if len(parts) != 3:
+            return None
+        payload = parts[1]
+        padding = '=' * (-len(payload) % 4)
+        payload += padding
+        decoded_bytes = base64.urlsafe_b64decode(payload)
+        return json.loads(decoded_bytes)
+    except Exception as e:
+        print(f"Failed to decode JWT: {e}")
+        return None
+
+
+# -------------------------------
+# Login Endpoint (with verified email check)
+# -------------------------------
+class LoginData(BaseModel):
+    username: str
+    password: str
+
+
+@app.post("/login")
+def login(data: LoginData = Body(...)):
+    payload = {
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
+        "grant_type": "password",
+        "username": data.username,
+        "password": data.password,
+    }
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
+
+    response = requests.post(KEYCLOAK_TOKEN_URL, data=payload, headers=headers)
+
+    print("Keycloak status:", response.status_code)
+    print("Keycloak response text:", response.text)
+
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid username or password. Keycloak says: {response.text}"
+        )
+
+    token_data = response.json()
+    access_token = token_data.get("access_token")
+
+    # Verify email_verified via userinfo endpoint
+    userinfo_url = f"{KEYCLOAK_URL}/realms/{REALM}/protocol/openid-connect/userinfo"
+    headers = {"Authorization": f"Bearer {access_token}"}
+    userinfo_resp = requests.get(userinfo_url, headers=headers)
+
+    if userinfo_resp.status_code == 200:
+        userinfo = userinfo_resp.json()
+        print("Userinfo response:", userinfo)
+
+        email_verified = userinfo.get("email_verified")
+        if email_verified is None:
+            print("⚠️ Warning: 'email_verified' not present in userinfo. Check Keycloak mappers/scopes.")
+        elif not email_verified:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Email is not verified. Please verify your email first."
+            )
+    else:
+        print("⚠️ Userinfo request failed. Falling back to JWT decode.")
+        claims = decode_jwt(access_token)
+        print("Decoded claims:", claims)
+        if not claims or not claims.get("email_verified", False):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Email is not verified"
+            )
+
+    return {
+        "access_token": access_token,
+        "refresh_token": token_data.get("refresh_token"),
+        "token_type": token_data.get("token_type"),
+        "expires_in": token_data.get("expires_in")
+    }
+
+
+# -------------------------------
 # Signup Endpoint
 # -------------------------------
 @app.post("/signup")
@@ -98,7 +188,7 @@ def signup(data: SignupData = Body(...)):
     email = data.email
     password = data.password
 
-    keycloak_admin.realm_name = "llm"
+    keycloak_admin.realm_name = REALM
 
     try:
         created = keycloak_admin.create_user({
@@ -114,15 +204,12 @@ def signup(data: SignupData = Body(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to create user: {e}")
 
-    # Extract user ID
     user_id = created.split("/")[-1] if isinstance(created, str) and created.startswith("/users/") else created
 
-    # Confirm user exists
     users = keycloak_admin.get_users()
     if user_id not in [u['id'] for u in users]:
         raise HTTPException(status_code=500, detail="User not found after creation")
 
-    # Assign basic_user role
     roles = keycloak_admin.get_realm_roles()
     basic_user_role = next((r for r in roles if r['name'] == 'basic_user'), None)
     if not basic_user_role:
@@ -130,7 +217,6 @@ def signup(data: SignupData = Body(...)):
 
     keycloak_admin.assign_realm_roles(user_id, [basic_user_role])
 
-    # Verification token
     token = secrets.token_urlsafe(32)
     verification_tokens[token] = user_id
     verify_url = VERIFY_URL + token
@@ -168,6 +254,7 @@ def resend_verification(username: str = Body(..., embed=True)):
 
     send_verification_email(email, verify_url)
     return {"message": f"📧 Verification email resent successfully to {email}!"}
+
 
 @app.get("/")
 def root():

@@ -1,7 +1,7 @@
 import gradio as gr
 import requests
 from keycloak_client import keycloak_login
-from settings import API_URL, SIGNUP_URL, RESEND_VERIFY_URL
+from settings import API_URL, SIGNUP_URL, RESEND_VERIFY_URL, LOGIN_URL
 
 
 def chat_with_model(message, history, token):
@@ -24,11 +24,26 @@ def chat_with_model(message, history, token):
 
 
 def on_login_click(username, password):
-    token, error = keycloak_login(username, password)
+    token, error = backend_login(username, password)
     if token:
         return gr.update(visible=False), gr.update(visible=True), token, f"✅ Login successful! Welcome, {username}."
     else:
         return gr.update(visible=True), gr.update(visible=False), None, f"❌ Login failed: {error}"
+
+def backend_login(username, password):
+    try:
+        response = requests.post(LOGIN_URL, json={"username": username, "password": password})
+        if response.status_code == 200:
+            data = response.json()
+            return data.get("access_token"), None
+        else:
+            try:
+                error_detail = response.json().get("detail", response.text)
+            except Exception:
+                error_detail = response.text or "Unknown error"
+            return None, error_detail
+    except Exception as e:
+        return None, str(e)
 
 
 def logout_action():

@@ -1,29 +1,44 @@
 import pytest
+import base64
+import json
 from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
-from app import app, verification_tokens
+from fastapi import HTTPException, status
+from fastapi.requests import Request
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from fastapi.security import HTTPAuthorizationCredentials
+from pydantic import ValidationError
+import asyncio
+from unittest.mock import patch
+
+from app import (
+    app,
+    verification_tokens,
+    get_current_user,
+    decode_jwt,
+    validation_exception_handler,
+    SignupData,
+)
+
 
 client = TestClient(app)
 
+# ------------------------------------------------------------------------------------
+# 1. Secure endpoint unauthenticated - invalid token (covers token verification failure)
+# ------------------------------------------------------------------------------------
 @patch("app.verify_token", side_effect=Exception("Invalid token"))
 def test_secure_endpoint_unauthenticated(mock_verify):
     headers = {"Authorization": "Bearer invalidtoken"}
     response = client.get("/secure-endpoint", headers=headers)
     assert response.status_code == 401
-    # Accept either message, or just check status code
     assert response.json()["detail"] in ["Invalid token", "Error decoding token headers."]
 
-# 1. Test get_current_user failure (token invalid) triggers 401
-@patch("keycloak_utils.verify_token", side_effect=Exception("Invalid token"))
-def test_secure_endpoint_unauthenticated(mock_verify):
-    headers = {"Authorization": "Bearer invalidtoken"}
-    response = client.get("/secure-endpoint", headers=headers)
-    assert response.status_code == 401
-    assert "Invalid token" in response.json()["detail"]
 
-
-# 2. Test signup with Keycloak create_user failure (simulate API failure)
-@patch("settings.keycloak_admin.create_user", side_effect=Exception("Keycloak API error"))
+# ------------------------------------------------------------------------------------
+# 2. Signup: Keycloak create_user fails (simulate API failure)
+# ------------------------------------------------------------------------------------
+@patch("app.keycloak_admin.create_user", side_effect=Exception("Keycloak API error"))
 def test_signup_keycloak_create_user_failure(mock_create_user):
     payload = {
         "username": "valid_user",
@@ -33,12 +48,14 @@ def test_signup_keycloak_create_user_failure(mock_create_user):
         "last_name": "Doe"
     }
     response = client.post("/signup", json=payload)
-    assert response.status_code == 500 or response.status_code == 422 or response.status_code == 400
+    assert response.status_code in (400, 422, 500)
 
 
-# 3. Test signup when user not found after creation
-@patch("settings.keycloak_admin.create_user", return_value="/users/123")
-@patch("settings.keycloak_admin.get_users", return_value=[])  # No users found
+# ------------------------------------------------------------------------------------
+# 3. Signup: user not found after creation
+# ------------------------------------------------------------------------------------
+@patch("app.keycloak_admin.create_user", return_value="/users/123")
+@patch("app.keycloak_admin.get_users", return_value=[])
 def test_signup_user_not_found_after_creation(mock_get_users, mock_create_user):
     payload = {
         "username": "valid_user",
@@ -52,10 +69,12 @@ def test_signup_user_not_found_after_creation(mock_get_users, mock_create_user):
     assert response.json()["detail"] == "User not found after creation"
 
 
-# 4. Test signup role not found
-@patch("settings.keycloak_admin.create_user", return_value="/users/123")
-@patch("settings.keycloak_admin.get_users", return_value=[{"id": "123"}])
-@patch("settings.keycloak_admin.get_realm_roles", return_value=[])  # No roles returned
+# ------------------------------------------------------------------------------------
+# 4. Signup: role not found
+# ------------------------------------------------------------------------------------
+@patch("app.keycloak_admin.create_user", return_value="/users/123")
+@patch("app.keycloak_admin.get_users", return_value=[{"id": "123"}])
+@patch("app.keycloak_admin.get_realm_roles", return_value=[])
 def test_signup_role_not_found(mock_roles, mock_get_users, mock_create_user):
     payload = {
         "username": "valid_user",
@@ -69,40 +88,51 @@ def test_signup_role_not_found(mock_roles, mock_get_users, mock_create_user):
     assert response.json()["detail"] == "Role 'basic_user' not found"
 
 
-# 5. Test /verify endpoint invalid token
+# ------------------------------------------------------------------------------------
+# 5. Verify endpoint invalid token
+# ------------------------------------------------------------------------------------
 def test_verify_invalid_token():
     response = client.get("/verify?token=nonexistenttoken")
     assert response.status_code == 400
     assert response.json()["detail"] == "Invalid or expired token"
 
 
-# 6. Test /resend-verification with user not found
-@patch("settings.keycloak_admin.get_users", return_value=[])
+# ------------------------------------------------------------------------------------
+# 6. Resend verification: user not found
+# ------------------------------------------------------------------------------------
+@patch("app.keycloak_admin.get_users", return_value=[])
 def test_resend_verification_user_not_found(mock_get_users):
     response = client.post("/resend-verification", json={"username": "nonexistent"})
     assert response.status_code == 404
     assert "User not found" in response.json()["detail"]
 
 
-# 7. Test /resend-verification when email is missing
-@patch("settings.keycloak_admin.get_users", return_value=[{"id": "123", "username": "user1"}])
+# ------------------------------------------------------------------------------------
+# 7. Resend verification: email missing
+# ------------------------------------------------------------------------------------
+@patch("app.keycloak_admin.get_users", return_value=[{"id": "123", "username": "user1"}])
 def test_resend_verification_no_email(mock_get_users):
     response = client.post("/resend-verification", json={"username": "user1"})
     assert response.status_code == 400
     assert "does not have an email configured" in response.json()["detail"]
 
 
-# 8. Test /resend-verification when email already verified
-@patch("settings.keycloak_admin.get_users", return_value=[{"id": "123", "username": "user1", "email": "user1@example.com", "emailVerified": True}])
+# ------------------------------------------------------------------------------------
+# 8. Resend verification: email already verified
+# ------------------------------------------------------------------------------------
+@patch("app.keycloak_admin.get_users", return_value=[{
+    "id": "123", "username": "user1", "email": "user1@example.com", "emailVerified": True
+}])
 def test_resend_verification_email_already_verified(mock_get_users):
     response = client.post("/resend-verification", json={"username": "user1"})
     assert response.status_code == 200
     assert "already verified" in response.json()["message"]
 
 
-# 9. Test validation exception handler returns friendly errors
+# ------------------------------------------------------------------------------------
+# 9. Validation error handler (422)
+# ------------------------------------------------------------------------------------
 def test_validation_exception_handler():
-    # Trigger validation error by missing required field
     payload = {
         "username": "us",
         "email": "notanemail",
@@ -121,8 +151,207 @@ def test_validation_exception_handler():
     assert "last_name" in json_resp["message"]
 
 
-# 10. Test Gradio UI mounted at root returns 200 (just basic smoke test)
+# ------------------------------------------------------------------------------------
+# 10. Gradio UI smoke test
+# ------------------------------------------------------------------------------------
 def test_gradio_ui_root():
     response = client.get("/")
     assert response.status_code == 200
     assert "Ollama LLM API" in response.json()["message"]
+
+
+# ------------------------------------------------------------------------------------
+# 11. SignupData validators (covers 41–47)
+# ------------------------------------------------------------------------------------
+def test_invalid_username_pattern():
+    with pytest.raises(ValidationError):
+        SignupData(username="@@@", email="a@b.com", password="Password1!", first_name="John", last_name="Doe")
+
+def test_invalid_password_missing_uppercase():
+    with pytest.raises(ValidationError):
+        SignupData(username="john", email="a@b.com", password="password1!", first_name="John", last_name="Doe")
+
+def test_invalid_first_name_pattern():
+    with pytest.raises(ValidationError):
+        SignupData(username="john", email="a@b.com", password="Password1!", first_name="J1", last_name="Doe")
+
+def test_invalid_last_name_pattern():
+    with pytest.raises(ValidationError):
+        SignupData(username="john", email="a@b.com", password="Password1!", first_name="John", last_name="D1")
+
+
+# ------------------------------------------------------------------------------------
+# 12. get_current_user invalid token (covers 73, 80)
+# ------------------------------------------------------------------------------------
+def test_get_current_user_invalid_token():
+    with patch("app.verify_token", side_effect=Exception("Invalid token")):
+        creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials="badtoken")
+        with pytest.raises(HTTPException) as exc_info:
+            get_current_user(creds)
+        assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
+
+# ------------------------------------------------------------------------------------
+# 13. decode_jwt invalid base64 (covers 139)
+# ------------------------------------------------------------------------------------
+def test_decode_jwt_invalid_structure():
+    invalid_token = "header.invalid_payload.signature"
+    result = decode_jwt(invalid_token)
+    assert result is None
+
+
+# ------------------------------------------------------------------------------------
+# 14. resend-verification success (covers 218–225)
+# ------------------------------------------------------------------------------------
+def test_resend_verification_success():
+    mock_user = {"id": "1", "username": "user", "email": "test@example.com", "emailVerified": False}
+    with patch("app.keycloak_admin.get_users", return_value=[mock_user]):
+        with patch("app.send_verification_email") as mock_send_email:
+            response = client.post("/resend-verification", json={"username": "user"})
+            assert response.status_code == 200
+            assert "Verification email resent" in response.json()["message"]
+            mock_send_email.assert_called_once()
+
+# ------------------------------------------------------------------------------------
+# 15. validation_exception_handler direct test (covers 232–234)
+# ------------------------------------------------------------------------------------
+def test_validation_exception_handler_direct():
+    exc = RequestValidationError([{"loc": ("body", "username"), "msg": "Invalid username"}])
+    request = Request(scope={"type": "http"})
+    response: JSONResponse = asyncio.run(validation_exception_handler(request, exc))
+    assert response.status_code == 422
+    assert "Invalid username" in response.body.decode()
+
+def test_signupdata_valid_data():
+    data = SignupData(
+        username="valid_user",
+        email="test@example.com",
+        password="Valid123!",
+        first_name="John",
+        last_name="Doe"
+    )
+    assert data.username == "valid_user"
+    assert data.email == "test@example.com"
+def test_get_current_user_success():
+    valid_payload = {"preferred_username": "john"}
+    with patch("app.verify_token", return_value=valid_payload):
+        creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials="validtoken")
+        user = get_current_user(creds)
+        assert user["preferred_username"] == "john"
+
+# test jwt
+def test_decode_jwt_success():
+    payload = {"sub": "123"}
+    b64_payload = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip("=")
+    token = f"header.{b64_payload}.signature"
+    result = decode_jwt(token)
+    assert result == payload
+
+def test_signupdata_valid_first_and_last_name():
+    data = SignupData(username="user123", email="a@b.com", password="Valid123!", first_name="Jane", last_name="Doe")
+    assert data.first_name == "Jane"
+    assert data.last_name == "Doe"
+
+def test_get_current_user_exception_path(mocker):
+    mocker.patch("app.verify_token", side_effect=ValueError("Token error"))
+    creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials="token123")
+    
+    from app import get_current_user
+    import pytest
+    from fastapi import HTTPException, status
+
+    with pytest.raises(HTTPException) as exc_info:
+        get_current_user(creds)
+    assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
+    assert exc_info.value.detail == "Invalid token"
+
+
+def test_decode_jwt_invalid_base64_exception():
+    token = "header.%%%$.signature"
+    result = decode_jwt(token)
+    assert result is None
+
+def test_resend_verification_token_assignment(mocker):
+    # Mock a user
+    mock_user = {"id": "1", "username": "user", "email": "test@example.com", "emailVerified": False}
+    
+    # Patch get_users and send_verification_email in app namespace
+    mocker.patch("app.keycloak_admin.get_users", return_value=[mock_user])
+    mocker.patch("app.send_verification_email")
+    mocker.patch("secrets.token_urlsafe", return_value="fixedtoken")
+
+    from app import verification_tokens
+    response = client.post("/resend-verification", json={"username": "user"})
+    
+    # Assert token assignment
+    assert verification_tokens["fixedtoken"] == "1"
+
+
+
+
+# -----------------------------
+# 1. SignupData extra edge cases
+# -----------------------------
+def test_username_too_short_or_long():
+    with pytest.raises(ValidationError):
+        SignupData(username="ab", email="a@b.com", password="Password1!", first_name="John", last_name="Doe")
+    with pytest.raises(ValidationError):
+        SignupData(username="a"*21, email="a@b.com", password="Password1!", first_name="John", last_name="Doe")
+
+def test_password_missing_requirements():
+    # missing lowercase
+    with pytest.raises(ValidationError):
+        SignupData(username="user1", email="a@b.com", password="PASSWORD1!", first_name="John", last_name="Doe")
+    # missing number
+    with pytest.raises(ValidationError):
+        SignupData(username="user1", email="a@b.com", password="Password!", first_name="John", last_name="Doe")
+    # missing special char
+    with pytest.raises(ValidationError):
+        SignupData(username="user1", email="a@b.com", password="Password1", first_name="John", last_name="Doe")
+
+def test_names_with_invalid_chars():
+    with pytest.raises(ValidationError):
+        SignupData(username="user1", email="a@b.com", password="Password1!", first_name="Jo3hn", last_name="Doe")
+    with pytest.raises(ValidationError):
+        SignupData(username="user1", email="a@b.com", password="Password1!", first_name="John", last_name="Do3e")
+
+import json
+import asyncio
+from fastapi import Request
+from fastapi.exceptions import RequestValidationError
+from app import validation_exception_handler
+
+
+def test_resend_verification_send_email_failure(mocker):
+    """Test resend-verification when sending email fails."""
+    mock_user = {
+        "id": "1",
+        "username": "user",
+        "email": "test@example.com",
+        "emailVerified": False,
+    }
+
+    mocker.patch("app.keycloak_admin.get_users", return_value=[mock_user])
+    mocker.patch("app.send_verification_email", side_effect=Exception("SMTP error"))
+
+    # Since send_verification_email raises an Exception, FastAPI will raise that during test
+    try:
+        client.post("/resend-verification", json={"username": "user"})
+    except Exception as e:
+        # Confirm the simulated SMTP error is indeed raised
+        assert "SMTP error" in str(e)
+
+
+def test_validation_exception_handler_no_errors():
+    """Covers validation_exception_handler with empty error list."""
+    request = Request(scope={"type": "http"})
+    exc = RequestValidationError([])
+
+    # Run the async handler manually
+    response = asyncio.run(validation_exception_handler(request, exc))
+    assert response.status_code == 422
+
+    # Decode JSON body manually (since JSONResponse has no .json())
+    body = json.loads(response.body.decode())
+
+    assert body.get("status") == "error"
+    assert isinstance(body.get("message"), dict)
