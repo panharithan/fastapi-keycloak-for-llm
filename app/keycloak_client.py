@@ -1,7 +1,7 @@
 import requests
 import base64
 import json
-from settings import KEYCLOAK_URL, REALM, KEYCLOAK_TOKEN_URL, CLIENT_ID, CLIENT_SECRET
+from app.settings import KEYCLOAK_URL, REALM, KEYCLOAK_TOKEN_URL, CLIENT_ID, CLIENT_SECRET
 
 
 def decode_jwt(token: str):

@@ -2,7 +2,7 @@
 from jose import jwt
 from jose.exceptions import JWTError
 import requests
-from settings import ISSUER, ENCRYPTION_ALGO, AUDIENCE
+from .settings import ISSUER, ENCRYPTION_ALGO, AUDIENCE
 
 def get_public_key():
     res = requests.get(f"{ISSUER}/protocol/openid-connect/certs")

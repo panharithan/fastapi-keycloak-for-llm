@@ -2,9 +2,10 @@ import pytest
 import json
 from fastapi.testclient import TestClient
 from unittest.mock import patch
-import app
 
-client = TestClient(app.app)
+from app.app import app, decode_jwt, greet  # import FastAPI instance and functions from app/app.py
+
+client = TestClient(app)
 
 
 # -----------------------------
@@ -12,27 +13,28 @@ client = TestClient(app.app)
 # -----------------------------
 def test_decode_jwt_invalid_structure():
     token = "invalidtokenwithoutdots"
-    assert app.decode_jwt(token) is None
+    assert decode_jwt(token) is None
 
 
-def test_decode_jwt_invalid_base64(monkeypatch):
+def test_decode_jwt_invalid_base64():
     bad_token = "a.broken_payload.c"
-    assert app.decode_jwt(bad_token) is None
+    assert decode_jwt(bad_token) is None
 
 
-def test_decode_jwt_valid(monkeypatch):
+def test_decode_jwt_valid():
     payload = {"email_verified": True}
     b64_payload = json.dumps(payload).encode()
-    token = f"a.{app.base64.urlsafe_b64encode(b64_payload).decode().rstrip('=')}.c"
-    decoded = app.decode_jwt(token)
+    import base64
+    token = f"a.{base64.urlsafe_b64encode(b64_payload).decode().rstrip('=')}.c"
+    decoded = decode_jwt(token)
     assert decoded["email_verified"] is True
 
 
 # -----------------------------
 # 2️⃣ Login — unverified email
 # -----------------------------
-@patch("app.requests.get")
-@patch("app.requests.post")
+@patch("app.app.requests.get")
+@patch("app.app.requests.post")
 def test_login_email_not_verified(mock_post, mock_get):
     mock_post.return_value.status_code = 200
     mock_post.return_value.json.return_value = {
@@ -57,8 +59,8 @@ def test_login_email_not_verified(mock_post, mock_get):
 # -----------------------------
 # 3️⃣ Login — userinfo missing "email_verified"
 # -----------------------------
-@patch("app.requests.get")
-@patch("app.requests.post")
+@patch("app.app.requests.get")
+@patch("app.app.requests.post")
 def test_login_userinfo_missing_email_verified(mock_post, mock_get):
     mock_post.return_value.status_code = 200
     mock_post.return_value.json.return_value = {
@@ -76,8 +78,8 @@ def test_login_userinfo_missing_email_verified(mock_post, mock_get):
 # -----------------------------
 # 4️⃣ Login — userinfo request fails → JWT fallback unverified
 # -----------------------------
-@patch("app.requests.get")
-@patch("app.requests.post")
+@patch("app.app.requests.get")
+@patch("app.app.requests.post")
 def test_login_userinfo_fallback_unverified(mock_post, mock_get):
     mock_post.return_value.status_code = 200
     mock_post.return_value.json.return_value = {
@@ -96,7 +98,7 @@ def test_login_userinfo_fallback_unverified(mock_post, mock_get):
 # -----------------------------
 # 5️⃣ Signup — user not found after creation
 # -----------------------------
-@patch("app.keycloak_admin")
+@patch("app.app.keycloak_admin")
 def test_signup_user_not_found_after_creation(mock_admin):
     mock_admin.realm_name = "llm"
     mock_admin.create_user.return_value = "/users/123"
@@ -116,7 +118,7 @@ def test_signup_user_not_found_after_creation(mock_admin):
 # -----------------------------
 # 6️⃣ Signup — role missing
 # -----------------------------
-@patch("app.keycloak_admin")
+@patch("app.app.keycloak_admin")
 def test_signup_role_not_found(mock_admin):
     mock_admin.create_user.return_value = "/users/123"
     mock_admin.get_users.return_value = [{"id": "123"}]
@@ -136,7 +138,7 @@ def test_signup_role_not_found(mock_admin):
 # -----------------------------
 # 7️⃣ Resend verification — email already verified
 # -----------------------------
-@patch("app.keycloak_admin")
+@patch("app.app.keycloak_admin")
 def test_resend_verification_already_verified(mock_admin):
     mock_admin.get_users.return_value = [{
         "username": "userx",
@@ -172,4 +174,4 @@ def test_validation_handler_custom_format():
 # 🔟 Gradio greet coverage
 # -----------------------------
 def test_greet_function():
-    assert app.greet("Panharith") == "Hello, Panharith!"
+    assert greet("Panharith") == "Hello, Panharith!"

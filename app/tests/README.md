@@ -1,3 +1,5 @@
+
+```
 tests/
 ├── __init__.py
 ├── conftest.py
@@ -5,6 +7,8 @@ tests/
 ├── test_auth.py              # Secure + token-based endpoints
 ├── test_verification.py      # Email and resend verification
 └── test_llm.py               # LLM-related endpoint
-
-Test with coveraage
-$ pytest --cov=app --cov-report=term-missing -v
+```
+Test with coverage (run from root folder)
+```
+pytest --cov=app --cov-report=term-missing -v
+```

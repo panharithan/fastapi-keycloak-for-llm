@@ -11,10 +11,10 @@ from fastapi.encoders import jsonable_encoder
 from starlette.requests import Request
 from pydantic import BaseModel, EmailStr, field_validator
 import gradio as gr
-from keycloak_utils import verify_token
-from llm import get_response
-from email_utils import send_verification_email
-from settings import keycloak_admin, VERIFY_URL, KEYCLOAK_URL, REALM, CLIENT_ID, CLIENT_SECRET, KEYCLOAK_TOKEN_URL
+from .keycloak_utils import verify_token
+from .llm import get_response
+from .email_utils import send_verification_email
+from .settings import keycloak_admin, VERIFY_URL, KEYCLOAK_URL, REALM, CLIENT_ID, CLIENT_SECRET, KEYCLOAK_TOKEN_URL
 
 
 # -------------------------------
@@ -131,9 +131,6 @@ def login(data: LoginData = Body(...)):
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
 
     response = requests.post(KEYCLOAK_TOKEN_URL, data=payload, headers=headers)
-
-    print("Keycloak status:", response.status_code)
-    print("Keycloak response text:", response.text)
 
     if response.status_code != 200:
         raise HTTPException(

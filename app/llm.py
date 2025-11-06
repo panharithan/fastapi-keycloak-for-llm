@@ -1,5 +1,5 @@
 import requests
-from settings import OLLAMA_API_URL, MODEL
+from .settings import OLLAMA_API_URL, MODEL
 
 
 def get_response(prompt: str, model: str = MODEL) -> str:

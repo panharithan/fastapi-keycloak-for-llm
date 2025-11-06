@@ -1,7 +1,6 @@
-# For testing /generate with mocked get_response.
 from fastapi.testclient import TestClient
 from unittest.mock import patch
-from app import app, get_current_user
+from app.app import app, get_current_user  # Import FastAPI instance here
 
 client = TestClient(app)
 
@@ -9,10 +8,9 @@ def fake_get_current_user():
     return {"preferred_username": "testuser"}
 
 def test_generate_text():
-    # Override dependency
     app.dependency_overrides[get_current_user] = fake_get_current_user
 
-    with patch("app.get_response", return_value="Hello world!"):
+    with patch("app.app.get_response", return_value="Hello world!"):
         payload = {"text": "Hi"}
         headers = {"Authorization": "Bearer faketoken"}
         response = client.post("/generate", json=payload, headers=headers)
