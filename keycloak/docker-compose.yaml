@@ -11,8 +11,10 @@ services:
     volumes:
       - keycloak-db-data:/var/lib/postgresql/data
     ports:
-      - "5435:5432"  # use 5435 if 5432 is taken
+      - "5435:5432"
     restart: unless-stopped
+    networks:
+      - keycloak-network
 
   keycloak:
     image: quay.io/keycloak/keycloak:25.0.1
@@ -24,10 +26,9 @@ services:
       KC_DB_USERNAME: ${KC_DB_USERNAME}
       KC_DB_PASSWORD: ${KC_DB_PASSWORD}
 
-      # 🔐 Admin credentials loaded from .env file
+      # Admin credentials
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USERNAME}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
-
     command:
       - start-dev
     ports:
@@ -35,6 +36,15 @@ services:
     depends_on:
       - postgres
     restart: unless-stopped
+    networks:
+      - keycloak-network
+      - llm-net  # Add this shared network for your FastAPI app to connect
 
 volumes:
   keycloak-db-data:
+
+networks:
+  keycloak-network:
+    driver: bridge
+  llm-net:
+    external: true  # This ensures it's shared with other projects

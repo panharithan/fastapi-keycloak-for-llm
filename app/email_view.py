@@ -1,6 +1,6 @@
 import smtplib
 from email.mime.text import MIMEText
-import settings
+import app.settings
 
 def send_verification_email(recipient_email, verification_link):
     subject = "Verify your account for LLM chat"

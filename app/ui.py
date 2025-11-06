@@ -1,7 +1,7 @@
 import gradio as gr
 import requests
-from keycloak_client import keycloak_login
-from settings import API_URL, SIGNUP_URL, RESEND_VERIFY_URL, LOGIN_URL
+from .keycloak_client import keycloak_login
+from .settings import API_URL, SIGNUP_URL, RESEND_VERIFY_URL, LOGIN_URL
 
 
 def chat_with_model(message, history, token):

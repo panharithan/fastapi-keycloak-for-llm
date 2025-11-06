@@ -1,0 +1,28 @@
+flowchart TD
+
+    %% === USERS ===
+    User["🧑 User (Browser)"] -->|HTTP:7860| UI["🎨 Gradio UI (app/ui.py)"]
+
+    %% === FRONTEND TO BACKEND ===
+    UI -->|REST API:8000| API["⚙️ FastAPI Backend (app/app.py)"]
+
+    %% === AUTH & MODEL INTERACTIONS ===
+    API -->|OAuth2 Token Verification| KC["🔑 Keycloak (Auth Server)"]
+    API -->|Model Inference Request| Ollama["🧠 Ollama Model Server"]
+
+    %% === KEYCLOAK DB ===
+    KC -->|Stores Users, Realms, Clients| Realm["🗄️ Keycloak Database"]
+
+    %% === NETWORK GROUP ===
+    subgraph Docker_Network["🐳 Docker Network: llm-net"]
+        UI
+        API
+        KC
+        Ollama
+        Realm
+    end
+
+    %% === PORTS & EXTERNAL ACCESS ===
+    UI -.->|"Accessible at http://localhost:7860"| User
+    API -.->|"Accessible at http://localhost:8000"| User
+    KC -.->|"Admin Console at http://localhost:8080"| User

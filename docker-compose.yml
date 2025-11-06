@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    container_name: fastapi-keycloak-app
+    ports:
+      - "8000:8000"  # FastAPI
+      - "7860:7860"  # Gradio
+    env_file: .env
+    environment:
+      # 🔑 Keycloak Configuration
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+      CLIENT_ID: ${CLIENT_ID}
+      CLIENT_SECRET: ${CLIENT_SECRET}
+      KEYCLOAK_TOKEN_URL: http://keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token
+      VERIFY_URL: ${VERIFY_URL:-http://keycloak:8000/verify}
+
+      # 📧 Email Configuration
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+
+    networks:
+      - llm-net
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  llm-net:
+    external: true

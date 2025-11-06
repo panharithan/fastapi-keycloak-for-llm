@@ -13,7 +13,7 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Keycloak
-KEYCLOAK_URL = "http://localhost:8080"
+KEYCLOAK_URL = "http://keycloak:8080"
 keycloak_admin = KeycloakAdmin(
     server_url=KEYCLOAK_URL,
     username=os.getenv("KEYCLOAK_ADMIN_USERNAME"),
@@ -27,7 +27,7 @@ ISSUER = f"{KEYCLOAK_URL}/realms/{REALM}"
 ENCRYPTION_ALGO = "RS256"
 AUDIENCE="account" # keycloak
 
-KEYCLOAK_TOKEN_URL = "http://localhost:8080/realms/llm/protocol/openid-connect/token"
+KEYCLOAK_TOKEN_URL = "http://keycloak:8080/realms/llm/protocol/openid-connect/token"
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 
