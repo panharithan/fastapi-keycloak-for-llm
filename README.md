@@ -1,8 +1,7 @@
 
 ## 🚀 Deployment with Docker Compose (Non-Production Environment)
 ### Project Overview
-This is an LLM-based chat application powered by Ollama for local large language model inference. It features a Gradio Web UI for user interaction and a FastAPI backend that handles chat requests, model responses, and system orchestration. The backend is secured with Keycloak OAuth2, ensuring authenticated access and role-based authorization for users.
-You can run your favorite Ollama model with a friendly chat interface or deploy it for team or organizational use, enabling a private, secure, and customizable AI assistant environment within your infrastructure.
+This open-source project is a large language model (LLM) chat application powered by Ollama. It features a Gradio Web UI for user interaction and a FastAPI backend that handles chat requests, model responses, and system orchestration. The backend is secured with Keycloak OAuth2, ensuring authenticated access and role-based authorization for users. Chat history is stored in MongoDB for fast, scalable storage. You can run your favorite Ollama model with a friendly chat interface or deploy it for team or organizational use, enabling a private, secure, and customizable AI assistant environment within your infrastructure. All's license free.
 
 ### Diagram of Architecture
 ![System Architecture Diagram](drawing/diagram.png)
@@ -57,7 +56,10 @@ docker network create llm-net
 ### 🔑 Step 3 — Bring Keycloak Up (in keycloak folder)
 Check keycloak/README.md
 
-### ⚙️ Step 4 — Bring the FastAPI + Gradio App Up (from root folder)
+### 🗄️ Step 4 — Bring MongoDB Up (in mongodb folder)
+Check mongodb/README.md
+
+### ⚙️ Step 5 — Bring the FastAPI + Gradio App Up (from root folder)
 
 Create a .env file to store sensitive parameters.
 ### Email Configuration
@@ -86,6 +88,16 @@ Create a .env file to store sensitive parameters.
 | CLIENT_ID     | Keycloak client ID for user login (ROPG grant). |
 | CLIENT_SECRET | Secret for the client ID.                    |
 
+### MongoDB Configuration
+
+| Variable      | Description                                     |
+|---------------|------------------------------------------------|
+| MONGO_USER    | MongoDB username for database authentication.  |
+| MONGO_PASS    | MongoDB password for database authentication.  |
+| MONGO_HOST    | MongoDB host address (e.g., localhost).         |
+| MONGO_DB_PORT | Port on which MongoDB is running (default 27017).|
+| MONGO_DB      | Name of the MongoDB database to use.             |
+
 .env 
 ```
 EMAIL_HOST_USER=<your Google mail>
@@ -95,6 +107,11 @@ KEYCLOAK_ADMIN_PASSWORD=<secret>
 KEYCLOAK_REALM=llm
 CLIENT_ID=chat-app
 CLIENT_SECRET=<secret>
+MONGO_USER=admin
+MONGO_PASS=<secret>
+MONGO_HOST=localhost
+MONGO_DB_PORT=27017
+MONGO_DB=chat_app_db
 ```
 
 Run Docker commands
@@ -127,5 +144,6 @@ FastAPI API	http://localhost:8000
 API	Docs	http://localhost:8000/docs	
 (or check app/postman.json file)￼
 Gradio UI	http://localhost:7860￼
-Keycloak	http://localhost:8080￼
+Keycloak	http://localhost:8080
+MongoDB 	mongodb://localhost:27017 (access via MongoDB client or tools like MongoDB Compass)
 ```

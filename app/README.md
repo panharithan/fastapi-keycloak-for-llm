@@ -69,6 +69,7 @@ Create a .env file to store sensitive parameters.
 | CLIENT_ID     | Keycloak client ID for user login (ROPG grant). |
 | CLIENT_SECRET | Secret for the client ID.                    |
 
+
 ##  🚀 Run Development Commands
 1. Install Python dependencies (using Python virtual environment is highly recommended) from root folder.
 
