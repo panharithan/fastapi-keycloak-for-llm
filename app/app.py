@@ -68,6 +68,17 @@ app = FastAPI()
 # -------------------------------
 # Auth dependency
 # -------------------------------
+
+def get_authenticated_username(user: dict) -> str:
+    """
+    Extracts and validates the preferred_username from the authenticated user.
+    Raises HTTP 401 if the username is missing.
+    """
+    username = user.get("preferred_username")
+    if not username:
+        raise HTTPException(status_code=401, detail="Unauthorized user")
+    return username
+
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
     try:
@@ -294,7 +305,7 @@ class ChatRequest(BaseModel):
 
 @app.post("/chat")
 def chat(data: ChatRequest, user: dict = Depends(get_current_user)):
-    username = user.get("preferred_username", "anonymous")
+    username = get_authenticated_username(user)
     prompt = data.prompt
 
     # 🧠 Load chat history from MongoDB
@@ -319,7 +330,7 @@ def chat(data: ChatRequest, user: dict = Depends(get_current_user)):
 @app.get("/history")
 def get_history(user: dict = Depends(get_current_user)):
     # Fetch chat history for the logged-in user
-    username = user.get("preferred_username", "anonymous")
+    username = get_authenticated_username(user)
     messages = get_user_history(username)
     return {"messages": messages}
 
@@ -327,7 +338,7 @@ def get_history(user: dict = Depends(get_current_user)):
 @app.delete("/history")
 def clear_user_history(user: dict = Depends(get_current_user)):
     # ✅ Clear chat history for the logged-in user
-    username = user.get("preferred_username", "anonymous")
+    username = get_authenticated_username(user)
     clear_history(username)
     return {"message": "Chat history cleared successfully."}
 
