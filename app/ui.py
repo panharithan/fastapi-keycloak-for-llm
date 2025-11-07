@@ -1,38 +1,72 @@
+from datetime import datetime
 import gradio as gr
 import requests
-from pymongo import MongoClient
-from .settings import BASE_URL, SIGNUP_URL, RESEND_VERIFY_URL, LOGIN_URL
-from .db import MONGO_URI
+from .settings import BASE_URL, LOGIN_URL, DATE_TIME_FORMATE, MODEL
+from .chat_history import format_message
 
-
-# -------------------------------
-# MongoDB connection
-# -------------------------------
-client = MongoClient(MONGO_URI)
-db = client["chat_db"]
-chats_collection = db["chat_messages"]
-
-
-# -------------------------------
-# Helpers
-# -------------------------------
-def get_user_chat_history(username):
-    if not username:
+def get_history_from_backend(username, token):
+    """Fetch chat history from FastAPI instead of MongoDB directly"""
+    if not token or not username:
         return []
+    headers = {"Authorization": f"Bearer {token}"}
     try:
-        messages = list(chats_collection.find({"username": username}).sort("timestamp", 1))
-        history = [{"role": msg["role"], "content": msg["message"]} for msg in messages]
-        return history
+        res = requests.get(f"{BASE_URL}/history", headers=headers)
+        if res.status_code == 200:
+            data = res.json()
+            messages = data.get("messages", [])
+            return [
+                format_message(
+                    msg["role"],
+                    msg["content"],
+                    msg.get("timestamp", None),
+                )
+                for msg in messages
+            ]
+        else:
+            print("❌ Failed to load history:", res.text)
+            return []
     except Exception as e:
-        print("MongoDB error:", e)
+        print("⚠️ Exception while fetching history:", e)
         return []
 
 
-def clear_user_history(username):
-    if not username:
+def clear_user_history(username, token):
+    """Clear chat history through backend"""
+    if not token or not username:
         return []
-    chats_collection.delete_many({"username": username})
-    return []
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        res = requests.delete(f"{BASE_URL}/history", headers=headers)
+        if res.status_code == 200:
+            return []
+        else:
+            print("❌ Failed to clear history:", res.text)
+            return []
+    except Exception as e:
+        print("⚠️ Exception while clearing history:", e)
+        return []
+
+
+def chat_with_model(message, history, username, token):
+    if not token or not username:
+        history.append(format_message("assistant", "⚠️ Please log in first!"))
+        return "", history
+
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        res = requests.post(f"{BASE_URL}/chat", json={"prompt": message}, headers=headers)
+        if res.status_code == 200:
+            reply = res.json().get("response", "")
+            now = datetime.utcnow().strftime(DATE_TIME_FORMATE)
+            history.extend([
+                format_message("user", message, now),
+                format_message("assistant", reply, now),
+            ])
+        else:
+            history.append(format_message("assistant", f"❌ Error: {res.text}"))
+    except Exception as e:
+        history.append(format_message("assistant", f"⚠️ Exception: {e}"))
+    return "", history
 
 
 def chat_with_model(message, history, username, token):
@@ -75,7 +109,7 @@ def backend_login(username, password):
 def on_login_click(username, password):
     token, error = backend_login(username, password)
     if token:
-        history = get_user_chat_history(username)
+        history = get_history_from_backend(username, token)
         return (
             gr.update(visible=False),
             gr.update(visible=True),
@@ -106,12 +140,12 @@ def logout_action():
     )
 
 
-def on_clear_click(username):
-    return clear_user_history(username)
+def on_clear_click(username, token):
+    return clear_user_history(username, token)
 
 
 def restore_session(username):
-    """Restore chat directly from MongoDB"""
+    """Restore chat via backend when reloading"""
     if not username:
         return (
             gr.update(visible=True),
@@ -121,14 +155,15 @@ def restore_session(username):
             "🔒 Please log in.",
             [],
         )
-    history = get_user_chat_history(username)
+    # Try to load stored token from browser localStorage
+    # (Gradio doesn’t persist across reloads automatically)
     return (
-        gr.update(visible=False),
         gr.update(visible=True),
+        gr.update(visible=False),
         None,
         username,
-        f"✅ Restored chat for {username}",
-        history,
+        "🔒 Session expired. Please log in again.",
+        [],
     )
 
 
@@ -151,7 +186,7 @@ with gr.Blocks(title="Chat + Keycloak + MongoDB", theme="soft") as demo:
 
     # --- Chat section ---
     with gr.Group(visible=False) as chat_section:
-        gr.Markdown("### 💬 Chat")
+        gr.Markdown(f"### 💬 Chat - Model {MODEL}")
         chatbot = gr.Chatbot(type="messages")
         msg_box = gr.Textbox(label="Type your message...")
         with gr.Row():
@@ -180,7 +215,7 @@ with gr.Blocks(title="Chat + Keycloak + MongoDB", theme="soft") as demo:
 
     clear_btn.click(
         fn=on_clear_click,
-        inputs=[username_state],
+        inputs=[username_state, token_state],
         outputs=[chatbot],
     )
 
@@ -190,7 +225,7 @@ with gr.Blocks(title="Chat + Keycloak + MongoDB", theme="soft") as demo:
         js="() => { localStorage.clear(); }"
     )
 
-    # ✅ Restore chat when page loads
+    # ✅ Restore session (auto-login flow can be extended)
     demo.load(
         fn=restore_session,
         inputs=[username_state],

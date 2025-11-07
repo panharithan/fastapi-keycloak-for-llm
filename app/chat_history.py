@@ -1,13 +1,25 @@
 # chat_history.py
+import pytz
 from pymongo import MongoClient
 from datetime import datetime
+from .settings import TIMEZONE, DATE_TIME_FORMATE
+from .db import chats
 
-client = MongoClient("mongodb://admin:admin@localhost:27017/chat_app_db?authSource=admin")
-db = client["chat_app_db"]
-collection = db["chat_history"]
+
+def format_message(role, content, timestamp=None):
+    """Return formatted chat message with TIMEZONE timestamp"""
+    if timestamp:
+        # Parse ISO8601 timestamp from backend
+        dt = datetime.fromisoformat(timestamp)
+        dt = dt.replace(tzinfo=pytz.UTC).astimezone(TIMEZONE)
+    else:
+        dt = datetime.utcnow().replace(tzinfo=pytz.UTC).astimezone(TIMEZONE)
+    formatted_ts = dt.strftime(DATE_TIME_FORMATE)
+    formatted_content = f"{content}\n\n<span style='font-size:0.8em; color:gray;'>🕒 {formatted_ts}</span>"
+    return {"role": role, "content": formatted_content}
 
 def save_user_message(username, role, content):
-    collection.insert_one({
+    chats.insert_one({
         "username": username,
         "role": role,
         "content": content,
@@ -15,7 +27,7 @@ def save_user_message(username, role, content):
     })
 
 def get_user_history(username):
-    messages = collection.find({"username": username}).sort("timestamp", 1)
+    messages = chats.find({"username": username}).sort("timestamp", 1)
     return [
         {
             # ✅ Safe get() for backward compatibility
@@ -27,4 +39,4 @@ def get_user_history(username):
     ]
 
 def clear_history(username):
-    collection.delete_many({"username": username})
+    chats.delete_many({"username": username})

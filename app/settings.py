@@ -2,7 +2,12 @@
 from keycloak import KeycloakAdmin
 import os
 from dotenv import load_dotenv
+import pytz
+
 load_dotenv()  # Load .env file
+
+DATE_TIME_FORMATE = "%d-%m-%Y %H:%M:%S"
+TIMEZONE = pytz.timezone("Europe/Berlin")
 
 # SMTP with Google Mail
 EMAIL_HOST = 'smtp.gmail.com'
