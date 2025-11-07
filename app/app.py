@@ -1,3 +1,4 @@
+# app.py
 import secrets
 import re
 import base64
@@ -15,6 +16,7 @@ from .keycloak_utils import verify_token
 from .llm import get_response
 from .email_utils import send_verification_email
 from .settings import keycloak_admin, VERIFY_URL, KEYCLOAK_URL, REALM, CLIENT_ID, CLIENT_SECRET, KEYCLOAK_TOKEN_URL
+from .chat_history import get_user_history, save_user_message, clear_history
 
 
 # -------------------------------
@@ -282,6 +284,52 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 # -------------------------------
 def greet(name):
     return f"Hello, {name}!"
+# -------------------------------
+# Chat History (Stable rollback)
+# -------------------------------
+from pydantic import BaseModel
+
+class ChatRequest(BaseModel):
+    prompt: str
+
+@app.post("/chat")
+def chat(data: ChatRequest, user: dict = Depends(get_current_user)):
+    username = user.get("preferred_username", "anonymous")
+    prompt = data.prompt
+
+    # 🧠 Load chat history from MongoDB
+    history = get_user_history(username)
+
+    # 🧩 Build context for the model
+    conversation = "\n".join(
+        [f"{msg['role']}: {msg['content']}" for msg in history[-10:]]
+    )
+    full_prompt = f"{conversation}\nUser: {prompt}"
+
+    # 🦙 Call LLM to generate response
+    reply = get_response(full_prompt)
+
+    # 💾 Save user and assistant messages in MongoDB
+    save_user_message(username, "user", prompt)
+    save_user_message(username, "assistant", reply)
+
+    return {"response": reply}
+
+
+@app.get("/history")
+def get_history(user: dict = Depends(get_current_user)):
+    # Fetch chat history for the logged-in user
+    username = user.get("preferred_username", "anonymous")
+    messages = get_user_history(username)
+    return {"messages": messages}
+
+
+@app.delete("/history")
+def clear_user_history(user: dict = Depends(get_current_user)):
+    # ✅ Clear chat history for the logged-in user
+    username = user.get("preferred_username", "anonymous")
+    clear_history(username)
+    return {"message": "Chat history cleared successfully."}
 
 
 gradio_app = gr.Interface(fn=greet, inputs="text", outputs="text")

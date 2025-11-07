@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_DB_ADMIN_SECRET}
+      MONGO_INITDB_DATABASE: chat_app_db
+    ports:
+      - "27017:27017"
+    volumes:
+      # Mount local folder to persist data even after `docker-compose down -v`
+      - ./mongo_data:/data/db
+    networks:
+      - llm-net
+
+networks:
+  llm-net:
+    external: true
