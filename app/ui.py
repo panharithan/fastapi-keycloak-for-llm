@@ -86,17 +86,35 @@ def on_login_click(username, password):
             token,
             history,
             f"✅ Login successful! Welcome, {username}.",
-            gr.update(visible=True),   # show logout button
+            gr.update(visible=True),   # logout_btn visible
+            gr.update(visible=False),  # resend_btn hidden on success
         )
     else:
+        # Check if error is about unverified email
+        show_resend = False
+        if error and ("email is not verified" in error.lower() or "not verified" in error.lower()):
+            show_resend = True
+        
         return (
-            gr.update(visible=True),
-            gr.update(visible=False),
+            gr.update(visible=True),   # auth_section
+            gr.update(visible=False),  # chat_section
             None,
             [],
             f"❌ Login failed: {error}",
-            gr.update(visible=False),  # hide logout button
+            gr.update(visible=False),  # logout_btn hidden
+            gr.update(visible=show_resend),  # show resend_btn only if email not verified error
         )
+
+def logout_action():
+    return (
+        gr.update(visible=True),    # auth_section
+        gr.update(visible=False),   # chat_section
+        None,
+        [],                        # chatbot cleared
+        "👋 Logged out.",           # login_status
+        gr.update(visible=False),  # logout_btn hidden
+        gr.update(visible=True),   # resend_btn visible on logout
+    )
 
 def logout_action():
     return (
@@ -171,24 +189,22 @@ with gr.Blocks() as demo:
 
     # --- Auth Section ---
     with gr.Group(visible=True) as auth_section:
-        with gr.Tabs():
-            # --- Login Tab ---
-            with gr.Tab("🔐 Login"):
-                username_login = gr.Textbox(label="Username")
-                password_login = gr.Textbox(label="Password", type="password")
-                login_btn = gr.Button("Login")
-                resend_btn = gr.Button("Resend Verification Email")
-                login_status = gr.Markdown()
+        with gr.Tab("🔐 Login"):
+            username_login = gr.Textbox(label="Username")
+            password_login = gr.Textbox(label="Password", type="password")
+            login_btn = gr.Button("Login")
+            resend_btn = gr.Button("Resend Verification Email", visible=False)  # initially hidden
+            login_status = gr.Markdown()
 
-            # --- Signup Tab ---
-            with gr.Tab("🆕 Sign Up"):
-                username_signup = gr.Textbox(label="Username")
-                email_signup = gr.Textbox(label="Email")
-                first_name_signup = gr.Textbox(label="First Name")
-                last_name_signup = gr.Textbox(label="Last Name")
-                password_signup = gr.Textbox(label="Password", type="password")
-                signup_btn = gr.Button("Create Account")
-                signup_status = gr.Markdown()
+        # --- Signup Tab ---
+        with gr.Tab("🆕 Sign Up"):
+            username_signup = gr.Textbox(label="Username")
+            email_signup = gr.Textbox(label="Email")
+            first_name_signup = gr.Textbox(label="First Name")
+            last_name_signup = gr.Textbox(label="Last Name")
+            password_signup = gr.Textbox(label="Password", type="password")
+            signup_btn = gr.Button("Create Account")
+            signup_status = gr.Markdown()
 
     # --- Chat Section ---
     with gr.Group(visible=False) as chat_section:
@@ -202,7 +218,7 @@ with gr.Blocks() as demo:
     login_btn.click(
         fn=on_login_click,
         inputs=[username_login, password_login],
-        outputs=[auth_section, chat_section, token_state, chatbot, login_status, logout_btn],
+        outputs=[auth_section, chat_section, token_state, chatbot, login_status, logout_btn, resend_btn],
     )
 
     resend_btn.click(
