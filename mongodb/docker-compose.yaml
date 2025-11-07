@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   mongodb:
-    image: mongo:6.0
+    image: mongo:8.2.1-noble   # latest stable for Linux (supports arm64 and amd64)
     container_name: mongodb
     restart: always
     environment:
@@ -12,7 +12,6 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      # Mount local folder to persist data even after `docker-compose down -v`
       - ./mongo_data:/data/db
     networks:
       - llm-net
