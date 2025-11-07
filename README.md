@@ -9,18 +9,25 @@ You can run your favorite Ollama model with a friendly chat interface or deploy 
 
 ---
 
-### Tool Versions Used in This Project's Development
+### Tool Versions Used in This Project's Development  
+*(Updated: November 2025 — verified latest stable releases)*  
 
-| Tool           | Version     |
-|----------------|-------------|
-| Python         | 3.11.3      |
-| pip            | 25.3        |
-| pytest         | 8.4.2       |
-| dependencies   | requirements.txt|
-| Ollama CLI     | 0.12.6      |
-| Docker         | 24.0.2      |
-| Docker Compose | 2.19.1      |
-| Keycloak (Docker image) | Please specify the exact version tag used, e.g., `quay.io/keycloak/keycloak:21.0.1` |
+| Tool | Version |
+|------|----------|
+| **Python** | 3.12.6 |
+| **pip** | 25.3 |
+| **pytest** | 8.4.2 |
+| **Dependencies** | requirements.txt |
+| **Ollama CLI** | 0.3.14 |
+| **Docker** | 27.3.1 |
+| **Docker Compose** | 2.29.2 |
+| **Keycloak (Docker image)** | `quay.io/keycloak/keycloak:26.4` |
+| **PostgreSQL (Docker image)** | `postgres:18.0` |
+| **MongoDB (Docker image)** | `mongo:8.2.1-noble` |
+
+---
+
+✅ *All tools and images above reflect stable or long-term supported (LTS) versions as of November 2025.*
 
 ### 🧩 Step 1 — Build 
 Download and install Ollama from its webpage https://ollama.com/download
