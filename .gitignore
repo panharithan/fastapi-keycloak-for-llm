@@ -100,7 +100,7 @@ venv.bak/
 .dmypy.json
 dmypy.json
 .ruff_cache/
-
+.*
 # Cursor editor
 .cursorignore
 .cursorindexingignore
