@@ -86,6 +86,7 @@ def on_login_click(username, password):
             token,
             history,
             f"✅ Login successful! Welcome, {username}.",
+            gr.update(visible=True),   # show logout button
         )
     else:
         return (
@@ -94,16 +95,17 @@ def on_login_click(username, password):
             None,
             [],
             f"❌ Login failed: {error}",
+            gr.update(visible=False),  # hide logout button
         )
-
 
 def logout_action():
     return (
-        gr.update(visible=True),
-        gr.update(visible=False),
-        None,
-        [],
-        "👋 Logged out.",
+        gr.update(visible=True),    # auth_section
+        gr.update(visible=False),   # chat_section
+        None,                      # token_state
+        [],                        # chatbot
+        "👋 Logged out.",           # login_status
+        gr.update(visible=False),  # logout_btn (hide on logout)
     )
 
 
@@ -147,12 +149,23 @@ def on_clear_click(token):
     # Here we assume token enough to clear history.
     return []  # clearing chat history locally; backend clear can be implemented similarly
 
-
 # -------------------------------
 # Gradio UI
 # -------------------------------
 with gr.Blocks() as demo:
-    gr.Markdown("# 🧑‍💻 Keycloak Login & Signup + Chat 💬")
+
+    demo.css = """
+    .small-logout {
+        padding: 2px 6px !important;
+        font-size: 16px !important;
+        min-width: auto !important;
+        width: auto !important;
+        height: auto !important;
+    }
+    """
+    with gr.Row():
+        gr.Markdown("# 🧑‍💻 Keycloak Login & Signup + Chat 💬", elem_id="page-title")
+        logout_btn = gr.Button("Logout", scale=0, visible=False, elem_classes=["small-logout"])
 
     token_state = gr.State(None)
 
@@ -184,13 +197,12 @@ with gr.Blocks() as demo:
         msg = gr.Textbox(label="Message")
         send_btn = gr.Button("Send")
         clear_btn = gr.Button("Clear Chat")
-        logout_btn = gr.Button("Logout")
 
     # --- Button bindings ---
     login_btn.click(
         fn=on_login_click,
         inputs=[username_login, password_login],
-        outputs=[auth_section, chat_section, token_state, chatbot, login_status],
+        outputs=[auth_section, chat_section, token_state, chatbot, login_status, logout_btn],
     )
 
     resend_btn.click(
@@ -219,8 +231,9 @@ with gr.Blocks() as demo:
 
     logout_btn.click(
         fn=logout_action,
-        outputs=[auth_section, chat_section, token_state, chatbot, login_status],
+        outputs=[auth_section, chat_section, token_state, chatbot, login_status, logout_btn],
     )
+
 
 if __name__ == "__main__":
     demo.launch(server_name="0.0.0.0", server_port=7860)
