@@ -10,17 +10,25 @@ services:
     env_file: .env
     environment:
       # 🔑 Keycloak Configuration
-      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_URL: http://keycloak:${KEYCLOAK_PORT}
       KEYCLOAK_REALM: ${KEYCLOAK_REALM}
       CLIENT_ID: ${CLIENT_ID}
       CLIENT_SECRET: ${CLIENT_SECRET}
-      KEYCLOAK_TOKEN_URL: http://keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token
-      VERIFY_URL: ${VERIFY_URL:-http://keycloak:8000/verify}
+      KEYCLOAK_TOKEN_URL: http://keycloak:${KEYCLOAK_PORT}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token
+      VERIFY_URL: ${VERIFY_URL:-http://keycloak:${KEYCLOAK_PORT}/verify}
+      PUBLIC_BASE_URL: "${PUBLIC_BASE_URL}"
 
       # 📧 Email Configuration
       EMAIL_HOST_USER: ${EMAIL_HOST_USER}
       EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+
+      # 🍃 External MongoDB Configuration
+      MONGO_USER: ${MONGO_USER}
+      MONGO_PASS: ${MONGO_PASS}
+      MONGO_HOST: ${MONGO_HOST}
+      MONGO_DB_PORT: ${MONGO_DB_PORT}
+      MONGO_DB: ${MONGO_DB}
 
     networks:
       - llm-net

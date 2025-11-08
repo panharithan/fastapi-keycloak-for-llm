@@ -9,6 +9,7 @@ flowchart TD
     %% === AUTH & MODEL INTERACTIONS ===
     API -->|OAuth2 Token Verification| KC["🔑 Keycloak (Auth Server)"]
     API -->|Model Inference Request| Ollama["🧠 Ollama Model Server"]
+    API -->|Persist Chat History| Mongo["🗄️ MongoDB (Chat History)"]
 
     %% === KEYCLOAK DB ===
     KC -->|Stores Users, Realms, Clients| Realm["🗄️ Keycloak Database"]
@@ -20,6 +21,7 @@ flowchart TD
         KC
         Ollama
         Realm
+        Mongo
     end
 
     %% === PORTS & EXTERNAL ACCESS ===

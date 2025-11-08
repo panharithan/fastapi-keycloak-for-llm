@@ -2,14 +2,14 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:16
+    image: postgres:18.0
     container_name: keycloak-postgres
     environment:
       POSTGRES_DB: keycloak
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - keycloak-db-data:/var/lib/postgresql/data
+      - keycloak-db-data:/var/lib/postgresql
     ports:
       - "5435:5432"
     restart: unless-stopped
@@ -17,7 +17,7 @@ services:
       - keycloak-network
 
   keycloak:
-    image: quay.io/keycloak/keycloak:25.0.1
+    image: quay.io/keycloak/keycloak:26.4
     container_name: keycloak
     environment:
       KC_DB: postgres
@@ -32,7 +32,7 @@ services:
     command:
       - start-dev
     ports:
-      - "8080:8080"
+      - "${KEYCLOAK_PORT}:8080"
     depends_on:
       - postgres
     restart: unless-stopped

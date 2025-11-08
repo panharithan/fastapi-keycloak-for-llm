@@ -1,3 +1,4 @@
+# app.py
 import secrets
 import re
 import base64
@@ -14,7 +15,8 @@ import gradio as gr
 from .keycloak_utils import verify_token
 from .llm import get_response
 from .email_utils import send_verification_email
-from .settings import keycloak_admin, VERIFY_URL, KEYCLOAK_URL, REALM, CLIENT_ID, CLIENT_SECRET, KEYCLOAK_TOKEN_URL
+from .settings import keycloak_admin, PUBLIC_BASE_URL, KEYCLOAK_URL, REALM, CLIENT_ID, CLIENT_SECRET, KEYCLOAK_TOKEN_URL
+from .chat_history import get_user_history, save_user_message, clear_history
 
 
 # -------------------------------
@@ -66,6 +68,17 @@ app = FastAPI()
 # -------------------------------
 # Auth dependency
 # -------------------------------
+
+def get_authenticated_username(user: dict) -> str:
+    """
+    Extracts and validates the preferred_username from the authenticated user.
+    Raises HTTP 401 if the username is missing.
+    """
+    username = user.get("preferred_username")
+    if not username:
+        raise HTTPException(status_code=401, detail="Unauthorized user")
+    return username
+
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
     try:
@@ -89,7 +102,15 @@ class Prompt(BaseModel):
 
 @app.post("/generate")
 async def generate_text(prompt: Prompt, user: dict = Depends(get_current_user)):
+    username = get_authenticated_username(user)
+
+    # Call LLM kernel
     result = get_response(prompt.text)
+
+    # Save user and assistant messages
+    save_user_message(username, "user", prompt.text)
+    save_user_message(username, "assistant", result)
+
     return {"response": result}
 
 
@@ -216,7 +237,7 @@ def signup(data: SignupData = Body(...)):
 
     token = secrets.token_urlsafe(32)
     verification_tokens[token] = user_id
-    verify_url = VERIFY_URL + token
+    verify_url = f"{PUBLIC_BASE_URL}/verify?token={token}"
     send_verification_email(email, verify_url)
 
     return {"message": "Signup successful! Please check your email to verify your account."}
@@ -247,8 +268,7 @@ def resend_verification(username: str = Body(..., embed=True)):
 
     token = secrets.token_urlsafe(32)
     verification_tokens[token] = user["id"]
-    verify_url = f"http://localhost:8000/verify?token={token}"
-
+    verify_url = f"{PUBLIC_BASE_URL}/verify?token={token}"
     send_verification_email(email, verify_url)
     return {"message": f"📧 Verification email resent successfully to {email}!"}
 
@@ -282,6 +302,52 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 # -------------------------------
 def greet(name):
     return f"Hello, {name}!"
+# -------------------------------
+# Chat History (Stable rollback)
+# -------------------------------
+from pydantic import BaseModel
+
+class ChatRequest(BaseModel):
+    prompt: str
+
+@app.post("/chat")
+def chat(data: ChatRequest, user: dict = Depends(get_current_user)):
+    username = get_authenticated_username(user)
+    prompt = data.prompt
+
+    # 🧠 Load chat history from MongoDB
+    history = get_user_history(username)
+
+    # 🧩 Build context for the model
+    conversation = "\n".join(
+        [f"{msg['role']}: {msg['content']}" for msg in history[-10:]]
+    )
+    full_prompt = f"{conversation}\nUser: {prompt}"
+
+    # 🦙 Call LLM to generate response
+    reply = get_response(full_prompt)
+
+    # 💾 Save user and assistant messages in MongoDB
+    save_user_message(username, "user", prompt)
+    save_user_message(username, "assistant", reply)
+
+    return {"response": reply}
+
+
+@app.get("/history")
+def get_history(user: dict = Depends(get_current_user)):
+    # Fetch chat history for the logged-in user
+    username = get_authenticated_username(user)
+    messages = get_user_history(username)
+    return {"messages": messages}
+
+
+@app.delete("/history")
+def clear_user_history(user: dict = Depends(get_current_user)):
+    # ✅ Clear chat history for the logged-in user
+    username = get_authenticated_username(user)
+    clear_history(username)
+    return {"message": "Chat history cleared successfully."}
 
 
 gradio_app = gr.Interface(fn=greet, inputs="text", outputs="text")

@@ -2,8 +2,8 @@ import pytest
 import json
 from fastapi.testclient import TestClient
 from unittest.mock import patch
-
-from app.app import app, decode_jwt, greet  # import FastAPI instance and functions from app/app.py
+from fastapi import HTTPException  
+from app.app import app, decode_jwt, greet, get_authenticated_username  # import FastAPI instance and functions from app/app.py
 
 client = TestClient(app)
 
@@ -175,3 +175,45 @@ def test_validation_handler_custom_format():
 # -----------------------------
 def test_greet_function():
     assert greet("Panharith") == "Hello, Panharith!"
+
+# -------------------------------
+# Unit Tests for get_authenticated_username
+# -------------------------------
+
+def test_get_authenticated_username_valid_user():
+    """✅ Should return username when preferred_username exists."""
+    user = {"preferred_username": "john_doe"}
+    result = get_authenticated_username(user)
+    assert result == "john_doe"
+
+
+def test_get_authenticated_username_missing_key():
+    """❌ Should raise 401 when preferred_username is missing."""
+    user = {"email": "john@example.com"}
+    with pytest.raises(HTTPException) as exc_info:
+        get_authenticated_username(user)
+    assert exc_info.value.status_code == 401
+    assert "Unauthorized user" in str(exc_info.value.detail)
+
+
+def test_get_authenticated_username_empty_string():
+    """❌ Should raise 401 when preferred_username is empty string."""
+    user = {"preferred_username": ""}
+    with pytest.raises(HTTPException) as exc_info:
+        get_authenticated_username(user)
+    assert exc_info.value.status_code == 401
+
+
+def test_get_authenticated_username_none_value():
+    """❌ Should raise 401 when preferred_username is None."""
+    user = {"preferred_username": None}
+    with pytest.raises(HTTPException) as exc_info:
+        get_authenticated_username(user)
+    assert exc_info.value.status_code == 401
+
+
+def test_get_authenticated_username_extra_fields():
+    """✅ Should ignore extra fields and return correct username."""
+    user = {"preferred_username": "alice", "email": "alice@example.com", "role": "admin"}
+    result = get_authenticated_username(user)
+    assert result == "alice"
