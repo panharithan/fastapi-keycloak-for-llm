@@ -5,6 +5,8 @@ This open-source project is a large language model (LLM) chat application powere
 
 It features a Gradio Web UI for user interaction and a FastAPI backend that handles chat requests, model responses, and system orchestration. The backend is secured with Keycloak OAuth2, ensuring authenticated access and role-based authorization for users. Chat history is stored in MongoDB for fast, scalable storage.
 
+Video Demo on Youtube https://youtu.be/hYHatP0JVQ8
+
 ### Diagram of Architecture
 ![System Architecture Diagram](drawing/diagram.png)
 
@@ -283,3 +285,6 @@ Similarly, if you experience connection issues with MongoDB, ensure the MongoDB 
 ```
 docker network connect llm-net keycloak 
 ```
+
+### Video Demo on Youtube
+ https://youtu.be/hYHatP0JVQ8
