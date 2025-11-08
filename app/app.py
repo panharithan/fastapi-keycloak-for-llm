@@ -102,7 +102,15 @@ class Prompt(BaseModel):
 
 @app.post("/generate")
 async def generate_text(prompt: Prompt, user: dict = Depends(get_current_user)):
+    username = get_authenticated_username(user)
+
+    # Call LLM kernel
     result = get_response(prompt.text)
+
+    # Save user and assistant messages
+    save_user_message(username, "user", prompt.text)
+    save_user_message(username, "assistant", result)
+
     return {"response": result}
 
 
