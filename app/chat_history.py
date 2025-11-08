@@ -2,7 +2,7 @@
 import pytz
 from pymongo import MongoClient
 from datetime import datetime
-from .settings import TIMEZONE, DATE_TIME_FORMATE
+from .settings import TIMEZONE, DATE_TIME_FORMAT
 from .db import chats
 
 
@@ -14,7 +14,7 @@ def format_message(role, content, timestamp=None):
         dt = dt.replace(tzinfo=pytz.UTC).astimezone(TIMEZONE)
     else:
         dt = datetime.utcnow().replace(tzinfo=pytz.UTC).astimezone(TIMEZONE)
-    formatted_ts = dt.strftime(DATE_TIME_FORMATE)
+    formatted_ts = dt.strftime(DATE_TIME_FORMAT)
     formatted_content = f"{content}\n\n<span style='font-size:0.8em; color:gray;'>🕒 {formatted_ts}</span>"
     return {"role": role, "content": formatted_content}
 

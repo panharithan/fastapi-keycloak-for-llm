@@ -84,6 +84,9 @@ Create a .env file to store sensitive parameters.
 |----------------------|------------------------------------------------------------------------------|
 | EMAIL_HOST_USER       | Gmail address used to send verification emails.                             |
 | EMAIL_HOST_PASSWORD   | Gmail App Password (not your main password!). Generate it from Google Account → Security → App Passwords. |
+| EMAIL_HOST            | SMTP server hostname (e.g., smtp.gmail.com).                                |
+| EMAIL_PORT            | SMTP server port (e.g., 587).                                               |
+| EMAIL_USE_TLS         | Enable TLS for SMTP (true/false).                                           |
 
 ---
 
@@ -94,7 +97,9 @@ Create a .env file to store sensitive parameters.
 | KEYCLOAK_ADMIN_USERNAME | Keycloak admin account username used by the app. |
 | KEYCLOAK_ADMIN_PASSWORD | Password for the Keycloak admin account.      |
 | KEYCLOAK_REALM          | The Keycloak realm name.                        |
-| KEYCLOAK_PORT         | The Keycloak port number.                        |
+| KEYCLOAK_HOST           | Hostname or service name of the Keycloak server (e.g., keycloak).           |
+| KEYCLOAK_PORT           | The Keycloak port number (default 8080).      |
+
 ---
 
 ### Client App Configuration
@@ -103,6 +108,9 @@ Create a .env file to store sensitive parameters.
 |---------------|---------------------------------------------|
 | CLIENT_ID     | Keycloak client ID for user login (ROPG grant). |
 | CLIENT_SECRET | Secret for the client ID.                    |
+| BASE_URL      | Base URL of your backend API (e.g., http://localhost:8000). Used by the UI to make API requests.|
+
+---
 
 ### MongoDB Configuration
 
@@ -110,27 +118,39 @@ Create a .env file to store sensitive parameters.
 |---------------|------------------------------------------------|
 | MONGO_USER    | MongoDB username for database authentication.  |
 | MONGO_PASS    | MongoDB password for database authentication.  |
-| MONGO_HOST    | MongoDB host address (e.g., localhost).         |
+| MONGO_HOST    | MongoDB host address (e.g., localhost, mongodb).|
 | MONGO_DB_PORT | Port on which MongoDB is running (default 27017).|
 | MONGO_DB      | Name of the MongoDB database to use.             |
 
 .env 
 ```
-OLLAMA_API_URL = "http://host.docker.internal:11434/api/generate"
-MODEL = "llama3.2"
-EMAIL_HOST_USER=<your Google mail>
-EMAIL_HOST_PASSWORD=<secret>
-KEYCLOAK_ADMIN_USERNAME=llm_admin
-KEYCLOAK_ADMIN_PASSWORD=<secret>
+# for docker variables and deployment. Variable names are the same to app/.env (development)
+OLLAMA_API_URL="http://host.docker.internal:11434/api/generate"
+MODEL="llama3.2"
+
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+
+EMAIL_HOST_USER=your-email@gmail.com
+EMAIL_HOST_PASSWORD=your-email-app-password
+
+KEYCLOAK_HOST=keycloak
+KEYCLOAK_ADMIN_USERNAME=your-keycloak-admin-username
+KEYCLOAK_ADMIN_PASSWORD=your-keycloak-admin-password
 KEYCLOAK_REALM=llm
 KEYCLOAK_PORT=8080
 CLIENT_ID=chat-app
-CLIENT_SECRET=<secret>
-MONGO_USER=admin
-MONGO_PASS=<secret>
-MONGO_HOST=localhost
+CLIENT_SECRET=your-client-secret
+
+MONGO_USER=your-mongo-username
+MONGO_PASS=your-mongo-password
+MONGO_HOST=mongodb
 MONGO_DB_PORT=27017
 MONGO_DB=chat_app_db
+
+# FastAPI
+BASE_URL=http://localhost:8000
 ```
 
 Run Docker commands
@@ -168,6 +188,14 @@ FastAPI API	http://localhost:8000
 API	Docs	http://localhost:8000/docs	
 (or check app/postman.json file)￼
 Gradio UI	http://localhost:7860￼
+Keycloak	http://localhost:8080
+MongoDB 	mongodb://localhost:27017 (access via MongoDB client or tools like MongoDB Compass)
+```
+
+Or for Production environment
+```
+Service	URL
+Web Server	http://localhost
 Keycloak	http://localhost:8080
 MongoDB 	mongodb://localhost:27017 (access via MongoDB client or tools like MongoDB Compass)
 ```
