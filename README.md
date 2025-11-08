@@ -154,6 +154,11 @@ docker down -v
 docker compose up -d
 ```
 
+For production environment, consider using Nginx (configuration check `nginx` folder) and follow `docker-compose.prod.yml` file. Sample command:
+```
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
 ⸻
 
 ### 🌐 Access the Services
