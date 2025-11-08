@@ -15,7 +15,7 @@ import gradio as gr
 from .keycloak_utils import verify_token
 from .llm import get_response
 from .email_utils import send_verification_email
-from .settings import keycloak_admin, VERIFY_URL, KEYCLOAK_URL, REALM, CLIENT_ID, CLIENT_SECRET, KEYCLOAK_TOKEN_URL
+from .settings import keycloak_admin, PUBLIC_BASE_URL, KEYCLOAK_URL, REALM, CLIENT_ID, CLIENT_SECRET, KEYCLOAK_TOKEN_URL
 from .chat_history import get_user_history, save_user_message, clear_history
 
 
@@ -237,7 +237,7 @@ def signup(data: SignupData = Body(...)):
 
     token = secrets.token_urlsafe(32)
     verification_tokens[token] = user_id
-    verify_url = VERIFY_URL + token
+    verify_url = f"{PUBLIC_BASE_URL}/verify?token={token}"
     send_verification_email(email, verify_url)
 
     return {"message": "Signup successful! Please check your email to verify your account."}
@@ -268,8 +268,7 @@ def resend_verification(username: str = Body(..., embed=True)):
 
     token = secrets.token_urlsafe(32)
     verification_tokens[token] = user["id"]
-    verify_url = f"http://localhost:8000/verify?token={token}"
-
+    verify_url = f"{PUBLIC_BASE_URL}/verify?token={token}"
     send_verification_email(email, verify_url)
     return {"message": f"📧 Verification email resent successfully to {email}!"}
 

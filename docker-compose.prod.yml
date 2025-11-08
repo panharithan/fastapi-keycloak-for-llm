@@ -4,41 +4,47 @@ services:
   app:
     build: .
     container_name: fastapi-keycloak-app
-    expose:
-      - "8000"  # FastAPI internal
-      - "7860"  # Gradio internal
+    ports:
+      - "8000:8000"  # FastAPI backend
+      - "7860:7860"  # Gradio frontend
     env_file: .env
     environment:
-      # 🔑 Keycloak Configuration
-      KEYCLOAK_URL: http://keycloak:${KEYCLOAK_PORT}
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
-      CLIENT_ID: ${CLIENT_ID}
-      CLIENT_SECRET: ${CLIENT_SECRET}
-      KEYCLOAK_TOKEN_URL: http://keycloak:${KEYCLOAK_PORT}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token
-      VERIFY_URL: ${VERIFY_URL:-http://keycloak:${KEYCLOAK_PORT}/verify}
+      # Keycloak Configuration
+      KEYCLOAK_URL: "http://${KEYCLOAK_HOST}:${KEYCLOAK_PORT}"
+      KEYCLOAK_REALM: "${KEYCLOAK_REALM}"
+      CLIENT_ID: "${CLIENT_ID}"
+      CLIENT_SECRET: "${CLIENT_SECRET}"
+      KEYCLOAK_TOKEN_URL: "http://${KEYCLOAK_HOST}:${KEYCLOAK_PORT}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token"
+      # VERIFY_URL: "${PUBLIC_BASE_URL}/verify"
 
-      # 📧 Email Configuration
-      EMAIL_HOST_USER: ${EMAIL_HOST_USER}
-      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
-      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      # Email Configuration
+      EMAIL_HOST_USER: "${EMAIL_HOST_USER}"
+      EMAIL_HOST_PASSWORD: "${EMAIL_HOST_PASSWORD}"
+      EMAIL_HOST: "${EMAIL_HOST}"
+      EMAIL_PORT: "${EMAIL_PORT}"
+      EMAIL_USE_TLS: "${EMAIL_USE_TLS}"
+      SMTP_HOST: "${SMTP_HOST:-smtp.gmail.com}"
 
-      # 🍃 External MongoDB Configuration
-      MONGO_USER: ${MONGO_USER}
-      MONGO_PASS: ${MONGO_PASS}
-      MONGO_HOST: ${MONGO_HOST}
-      MONGO_DB_PORT: ${MONGO_DB_PORT}
-      MONGO_DB: ${MONGO_DB}
+      # MongoDB Configuration
+      MONGO_USER: "${MONGO_USER}"
+      MONGO_PASS: "${MONGO_PASS}"
+      MONGO_HOST: "${MONGO_HOST}"
+      MONGO_DB_PORT: "${MONGO_DB_PORT}"
+      MONGO_DB: "${MONGO_DB}"
 
-      # 🤖 LLM API
-      OLLAMA_API_URL: http://host.docker.internal:11434/api/generate
-      MODEL: llama3.2
+      # LLM API
+      OLLAMA_API_URL: "${OLLAMA_API_URL}"
+      MODEL: "${MODEL}"
+
+      # Base URLs
+      INTERNAL_BASE_URL: "http://fastapi-keycloak-app:8000"
+      PUBLIC_BASE_URL: "${PUBLIC_BASE_URL}"
 
     networks:
       - llm-net
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
-  # 🌐 Nginx Reverse Proxy
   nginx:
     image: nginx:latest
     container_name: nginx-proxy
@@ -50,7 +56,7 @@ services:
       - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/certs:/etc/nginx/certs:ro  # optional for SSL
+      - ./nginx/certs:/etc/nginx/certs:ro  # SSL certs if needed
     networks:
       - llm-net
 

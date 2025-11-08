@@ -16,6 +16,7 @@ services:
       CLIENT_SECRET: ${CLIENT_SECRET}
       KEYCLOAK_TOKEN_URL: http://keycloak:${KEYCLOAK_PORT}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token
       VERIFY_URL: ${VERIFY_URL:-http://keycloak:${KEYCLOAK_PORT}/verify}
+      PUBLIC_BASE_URL: "${PUBLIC_BASE_URL}"
 
       # 📧 Email Configuration
       EMAIL_HOST_USER: ${EMAIL_HOST_USER}

@@ -122,35 +122,104 @@ Create a .env file to store sensitive parameters.
 | MONGO_DB_PORT | Port on which MongoDB is running (default 27017).|
 | MONGO_DB      | Name of the MongoDB database to use.             |
 
-.env 
+---
+
+### Environment variables for FastAPI Base URLs
+
+| Variable         | Description                                                                                           |
+|------------------|-----------------------------------------------------------------------------------------------------|
+| BASE_URL         | Base URL for non-production Docker Compose usage, e.g., `http://localhost:8000`. Used internally by backend and UI for API requests.|
+| PUBLIC_BASE_URL   | Public-facing base URL for production, used in email links and browser, e.g., `http://llm.local`.    |
+| VERIFY_URL       | Verification URL used in production for email tokens, e.g., `http://app:8000/verify?token=`. Used internally in Docker for backend calls.|
+
+---
+
+### Example values
+
+**For non-production Docker Compose:**
+
+```env
+BASE_URL=http://localhost:8000
+PUBLIC_BASE_URL=http://localhost:8000
+```
+
+For production Docker Compose:
+```
+# Internal calls inside Docker (backend self-calls)
+BASE_URL=http://app:8000
+VERIFY_URL=http://app:8000/verify?token=
+
+# Public-facing links (emails, browser)
+PUBLIC_BASE_URL=http://llm.local
+```
+
+Full example of .env for non-production Docker compose file
 ```
 # for docker variables and deployment. Variable names are the same to app/.env (development)
-OLLAMA_API_URL="http://host.docker.internal:11434/api/generate"
-MODEL="llama3.2"
+OLLAMA_API_URL = "http://host.docker.internal:11434/api/generate"
+MODEL = "llama3.2"
 
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USE_TLS=True
 
-EMAIL_HOST_USER=your-email@gmail.com
-EMAIL_HOST_PASSWORD=your-email-app-password
+EMAIL_HOST_USER=an.*****@gmail.com
+EMAIL_HOST_PASSWORD=**************
 
 KEYCLOAK_HOST=keycloak
-KEYCLOAK_ADMIN_USERNAME=your-keycloak-admin-username
-KEYCLOAK_ADMIN_PASSWORD=your-keycloak-admin-password
+KEYCLOAK_ADMIN_USERNAME=llm_admin
+KEYCLOAK_ADMIN_PASSWORD=********
 KEYCLOAK_REALM=llm
 KEYCLOAK_PORT=8080
 CLIENT_ID=chat-app
-CLIENT_SECRET=your-client-secret
+CLIENT_SECRET=***********************
 
-MONGO_USER=your-mongo-username
-MONGO_PASS=your-mongo-password
+MONGO_USER=admin
+MONGO_PASS=********
 MONGO_HOST=mongodb
 MONGO_DB_PORT=27017
 MONGO_DB=chat_app_db
 
 # FastAPI
 BASE_URL=http://localhost:8000
+PUBLIC_BASE_URL=http://localhost:8000
+```
+
+Full .env file for production Docker Compose with Nginx as reverse proxy. Assuming http://llm.local is the domain name
+```
+# .env.production
+# for docker variables and deployment. Variable names are the same to app/.env (development)
+OLLAMA_API_URL = "http://host.docker.internal:11434/api/generate"
+MODEL = "llama3.2"
+
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+
+EMAIL_HOST_USER=an.*****@gmail.com
+EMAIL_HOST_PASSWORD=**************
+
+KEYCLOAK_HOST=keycloak
+KEYCLOAK_ADMIN_USERNAME=llm_admin
+KEYCLOAK_ADMIN_PASSWORD=********
+KEYCLOAK_REALM=llm
+KEYCLOAK_PORT=8080
+CLIENT_ID=chat-app
+CLIENT_SECRET=***********************
+
+MONGO_USER=admin
+MONGO_PASS=********
+MONGO_HOST=mongodb
+MONGO_DB_PORT=27017
+MONGO_DB=chat_app_db
+
+
+# Internal calls inside Docker
+BASE_URL=http://app:8000
+VERIFY_URL=http://app:8000/verify?token=
+
+# Public-facing links (emails, browser)
+PUBLIC_BASE_URL=http://llm.local
 ```
 
 Run Docker commands
@@ -176,7 +245,7 @@ docker compose up -d
 
 For production environment, consider using Nginx (configuration check `nginx` folder) and follow `docker-compose.prod.yml` file. Sample command:
 ```
-docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml up --build -d
 ```
 
 ⸻
@@ -189,15 +258,17 @@ API	Docs	http://localhost:8000/docs
 (or check app/postman.json file)￼
 Gradio UI	http://localhost:7860￼
 Keycloak	http://localhost:8080
-MongoDB 	mongodb://localhost:27017 (access via MongoDB client or tools like MongoDB Compass)
+MongoDB 	mongodb://localhost:27017 
+(access via MongoDB client or tools like MongoDB Compass)
 ```
 
-Or for Production environment
+Or for Production environment. Assuming http://llm-local is the domain name
 ```
 Service	URL
-Web Server	http://localhost
+Web Server	http://llm-local
 Keycloak	http://localhost:8080
-MongoDB 	mongodb://localhost:27017 (access via MongoDB client or tools like MongoDB Compass)
+MongoDB 	mongodb://localhost:27017
+(Keycloak and MongoDB are deployed seperatedly and not managed by Nginx reverse proxy.)
 ```
 
 ### Troubleshooting

@@ -18,8 +18,8 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # --- Keycloak ---
-KEYCLOAK_HOST = os.getenv("KEYCLOAK_HOST", "keycloak")
-KEYCLOAK_PORT = os.getenv("KEYCLOAK_PORT", "8080")
+KEYCLOAK_HOST = os.getenv("KEYCLOAK_HOST") or "keycloak"
+KEYCLOAK_PORT = os.getenv("KEYCLOAK_PORT") or "8080"
 KEYCLOAK_URL = f"http://{KEYCLOAK_HOST}:{KEYCLOAK_PORT}"
 
 KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM", "llm")
@@ -45,7 +45,8 @@ CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 
 # --- URLs for UI and API ---
-BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
+BASE_URL = os.getenv("BASE_URL") or "http://localhost:8000"
+PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL") or "http://localhost:8000"
 API_URL = f"{BASE_URL}/generate"
 SIGNUP_URL = f"{BASE_URL}/signup"
 LOGIN_URL = f"{BASE_URL}/login"
