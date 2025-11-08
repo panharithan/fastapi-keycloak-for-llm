@@ -104,7 +104,7 @@ dmypy.json
 # Cursor editor
 .cursorignore
 .cursorindexingignore
-
+app/.DS_Store
 # Marimo
 marimo/_static/
 marimo/_lsp/

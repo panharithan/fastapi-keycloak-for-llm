@@ -18,7 +18,8 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Keycloak
-KEYCLOAK_URL = "http://keycloak:8080"
+KEYCLOAK_PORT=os.getenv("KEYCLOAK_PORT")
+KEYCLOAK_URL = f"http://keycloak:{KEYCLOAK_PORT}"
 keycloak_admin = KeycloakAdmin(
     server_url=KEYCLOAK_URL,
     username=os.getenv("KEYCLOAK_ADMIN_USERNAME"),
@@ -48,5 +49,5 @@ RESEND_URL = RESEND_VERIFY_URL # Optional alias (only if some older code still r
 
 
 # LLM
-OLLAMA_API_URL = "http://localhost:11434/api/generate"
-MODEL = "llama3.2"
+OLLAMA_API_URL = os.getenv("OLLAMA_API_URL")
+MODEL = os.getenv("MODEL")

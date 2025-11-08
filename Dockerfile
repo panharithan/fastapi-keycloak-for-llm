@@ -13,5 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Run both FastAPI (app.app:app) and Gradio (app.ui) in parallel
-CMD ["bash", "-c", "uvicorn app.app:app --host 0.0.0.0 --port 8000 & python -m app.ui"]
+
+# 1. Run pytest (fail fast on any error)
+# 2. If tests pass, run FastAPI and Gradio in parallel
+CMD ["bash", "-c", "pytest app/tests --maxfail=1 --disable-warnings -q && uvicorn app.app:app --host 0.0.0.0 --port 8000 & python -m app.ui"]
