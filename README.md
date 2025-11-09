@@ -3,7 +3,7 @@
 ### Project Overview
 This open-source project is a large language model (LLM) chat application powered by Ollama. You can run your favorite Ollama model with a friendly chat interface or deploy it for team or organizational use, enabling a private, secure, and customizable AI assistant environment within your infrastructure. All's license free.
 
-It features a Gradio Web UI for user interaction and a FastAPI backend that handles chat requests, model responses, and system orchestration. The backend is secured with Keycloak OAuth2, ensuring authenticated access and role-based authorization for users. Chat history is stored in MongoDB for fast, scalable storage.
+It features a Gradio Web UI for user interaction and a FastAPI backend that handles chat requests, model responses, and system orchestration. The backend is secured with Keycloak OAuth2, ensuring authenticated access and role-based authorization for users. Chat history is stored in MongoDB for fast, scalable storage, and encrypted by secure Fernet symmetric encryption.
 
 Video Demo on Youtube https://youtu.be/hYHatP0JVQ8
 
@@ -70,6 +70,15 @@ docker network connect llm-net mongodb
 ```
 
 ### ⚙️ Step 5 — Bring the FastAPI + Gradio App Up (from root folder)
+Key Generation for chat history encryption on MongoDB
+```
+pip install cryptography
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+
+acQ9sqn8nwdydAFA9CStb6UMwn0174-v1Ou3P1umXnk=
+```
+Use this key for `ENCRYPTION_KEY` variable in .env file below
+
 
 Create a .env file to store sensitive parameters.
 ### LLM Configuration
@@ -123,7 +132,7 @@ Create a .env file to store sensitive parameters.
 | MONGO_HOST    | MongoDB host address (e.g., localhost, mongodb).|
 | MONGO_DB_PORT | Port on which MongoDB is running (default 27017).|
 | MONGO_DB      | Name of the MongoDB database to use.             |
-
+| ENCRYPTION_KEY | Encryption key for chat history collection            |
 ---
 
 ### Environment variables for FastAPI Base URLs
@@ -181,6 +190,7 @@ MONGO_PASS=********
 MONGO_HOST=mongodb
 MONGO_DB_PORT=27017
 MONGO_DB=chat_app_db
+ENCRYPTION_KEY=acQ9sqn8nwdydAFA9CStb6UMwn0174-v1Ou3P1umXnk= # change this
 
 # FastAPI
 BASE_URL=http://localhost:8000
@@ -189,7 +199,6 @@ PUBLIC_BASE_URL=http://localhost:8000
 
 Full .env file for production Docker Compose with Nginx as reverse proxy. Assuming http://llm.local is the domain name
 ```
-# .env.production
 # for docker variables and deployment. Variable names are the same to app/.env (development)
 OLLAMA_API_URL = "http://host.docker.internal:11434/api/generate"
 MODEL = "llama3.2"
@@ -214,7 +223,7 @@ MONGO_PASS=********
 MONGO_HOST=mongodb
 MONGO_DB_PORT=27017
 MONGO_DB=chat_app_db
-
+ENCRYPTION_KEY=acQ9sqn8nwdydAFA9CStb6UMwn0174-v1Ou3P1umXnk= # change this
 
 # Internal calls inside Docker
 BASE_URL=http://app:8000

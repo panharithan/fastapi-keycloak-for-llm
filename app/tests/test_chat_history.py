@@ -1,7 +1,8 @@
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch
-from app.app import app  # ✅ correct import
+from app.app import app
+from app.chat_history import encrypt_message, decrypt_message
 
 
 # -------------------------------
@@ -87,3 +88,44 @@ def test_clear_history_endpoint(mock_clear_history, mock_user, auth_header):
     data = response.json()
     assert data["message"] == "Chat history cleared successfully."
     mock_clear_history.assert_called_once()
+
+def test_encrypt_message_returns_encrypted_string():
+    """Ensure encrypt_message() returns a base64-encoded ciphertext"""
+    text = "hello world"
+    encrypted = encrypt_message(text)
+
+    # Check type and that encryption actually changes the text
+    assert isinstance(encrypted, str)
+    assert encrypted != text
+
+    # Fernet tokens typically contain '=' or '-'
+    assert any(c in encrypted for c in ['=', '-', '_'])
+
+def test_decrypt_message_returns_original_text():
+    """Ensure decrypt_message() restores original text"""
+    text = "test message"
+    encrypted = encrypt_message(text)
+    decrypted = decrypt_message(encrypted)
+
+    assert decrypted == text
+
+def test_decrypt_message_handles_unencrypted_input():
+    """Backward compatibility: decrypt_message should return plaintext if not encrypted"""
+    plain_text = "legacy unencrypted message"
+    result = decrypt_message(plain_text)
+
+    assert result == plain_text
+
+def test_encryption_is_reversible_with_same_key():
+    """Ensure encryption-decryption cycle works consistently with the same Fernet key"""
+    samples = ["short", "with spaces", "symbols!@#", "123456"]
+    for text in samples:
+        token = encrypt_message(text)
+        assert decrypt_message(token) == text
+
+def test_invalid_token_does_not_raise_error():
+    """Ensure decrypt_message gracefully handles invalid tokens"""
+    invalid_token = "not-a-valid-fernet-token"
+    result = decrypt_message(invalid_token)
+    # Should not raise an exception, should return same input
+    assert result == invalid_token

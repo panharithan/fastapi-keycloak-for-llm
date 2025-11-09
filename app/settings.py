@@ -2,6 +2,7 @@ from keycloak import KeycloakAdmin
 import os
 from dotenv import load_dotenv
 import pytz
+from cryptography.fernet import Fernet
 
 load_dotenv()  # Load .env file
 
@@ -58,3 +59,12 @@ RESEND_URL = RESEND_VERIFY_URL  # alias
 # LLM
 OLLAMA_API_URL = os.getenv("OLLAMA_API_URL")
 MODEL = os.getenv("MODEL")
+
+# MongoDB Collection encryption
+ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY")
+
+if not ENCRYPTION_KEY:
+    print("⚠️ Warning: ENCRYPTION_KEY not found. Using temporary key for tests.")
+    ENCRYPTION_KEY = Fernet.generate_key().decode()
+
+fernet = Fernet(ENCRYPTION_KEY)
