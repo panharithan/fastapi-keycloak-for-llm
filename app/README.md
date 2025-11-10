@@ -40,9 +40,17 @@ For Keycloak configurations, check file keycloak/README.md
 
 ⸻
 
+## Key Generation for chat history encryption on MongoDB
+```
+pip install cryptography
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+
+acQ9sqn8nwdydAFA9CStb6UMwn0174-v1Ou3P1umXnk=
+```
+Use this key for `ENCRYPTION_KEY` variable in .env file below
+
 ##  🔐 Environment Configuration
 
-Create a .env file to store sensitive parameters.
 Create a .env file to store sensitive parameters.
 ### LLM Configuration
 
@@ -95,6 +103,7 @@ Create a .env file to store sensitive parameters.
 | MONGO_HOST    | MongoDB host address (e.g., localhost, mongodb).|
 | MONGO_DB_PORT | Port on which MongoDB is running (default 27017).|
 | MONGO_DB      | Name of the MongoDB database to use.             |
+| ENCRYPTION_KEY | Encryption key for chat history collection            |
 
 ---
 
@@ -142,6 +151,7 @@ MONGO_PASS=********
 MONGO_HOST=localhost
 MONGO_DB_PORT=27017
 MONGO_DB=chat_app_db
+ENCRYPTION_KEY=acQ9sqn8nwdydAFA9CStb6UMwn0174-v1Ou3P1umXnk= # change this
 
 # URLs
 BASE_URL=http://localhost:8000

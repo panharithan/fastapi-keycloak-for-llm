@@ -29,6 +29,7 @@ services:
       MONGO_HOST: ${MONGO_HOST}
       MONGO_DB_PORT: ${MONGO_DB_PORT}
       MONGO_DB: ${MONGO_DB}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
 
     networks:
       - llm-net
