@@ -23,29 +23,44 @@ def extract_text_from_pdf(pdf_bytes: bytes) -> str:
 # -------------------------------
 # PDF Upload
 # -------------------------------
-def upload_pdf_to_backend(pdf_file, token, history):
-    """Upload a PDF to the backend and display response."""
-    if not token:
-        history.append({"role": "assistant", "content": "⚠️ Please log in first!"})
-        return None, history
+import requests
 
-    if pdf_file is None:
-        history.append({"role": "assistant", "content": "⚠️ Please select a PDF file first."})
-        return None, history
-
+def upload_pdf_to_backend(pdf_file, token, history=None):
+    """
+    Upload a PDF to backend, extract text, summarize, and append response to chat history.
+    Returns (response_dict, updated_history)
+    """
+    history = history or []
     headers = {"Authorization": f"Bearer {token}"}
+
+    if not pdf_file:
+        history.append({"role": "assistant", "content": "⚠️ No PDF selected."})
+        return {"status": "error", "message": "No file selected."}, history
+
     try:
-        with open(pdf_file, "rb") as f:
-            files = {"file": (pdf_file, f, "application/pdf")}
-            res = requests.post(f"{BASE_URL}/upload-pdf", files=files, headers=headers)
+        files = {"file": open(pdf_file.name, "rb")}
+        res = requests.post("http://localhost:8000/upload-pdf", files=files, headers=headers)
 
         if res.status_code == 200:
-            msg = res.json().get("message", "✅ PDF uploaded successfully.")
-            summary = res.json().get("summary", "")
-            history.append({"role": "user", "content": f"📄 Uploaded: {pdf_file}"})
-            history.append({"role": "assistant", "content": f"{msg}\n\n{summary}"})
+            data = res.json()
+            msg = data.get("message", "✅ PDF uploaded successfully.")
+            summary = data.get("summary", "")
+
+            display_text = msg
+            if summary:
+                display_text += f"\n\n🧠 **Summary:** {summary}"
+
+            history.append({
+                "role": "assistant",
+                "content": display_text
+            })
+            return data, history
         else:
-            history.append({"role": "assistant", "content": f"❌ Upload failed: {res.text}"})
+            error_msg = f"❌ PDF upload failed: {res.text}"
+            history.append({"role": "assistant", "content": error_msg})
+            return {"status": "error", "message": error_msg}, history
+
     except Exception as e:
-        history.append({"role": "assistant", "content": f"❌ Exception during upload: {e}"})
-    return None, history
+        err_text = f"❌ Exception during upload: {e}"
+        history.append({"role": "assistant", "content": err_text})
+        return {"status": "error", "message": str(e)}, history
