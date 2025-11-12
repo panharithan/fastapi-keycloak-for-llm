@@ -3,35 +3,34 @@ import requests
 from .keycloak_client import keycloak_login
 from .settings import API_URL, SIGNUP_URL, BASE_URL
 from .chat_history import format_message
-from .utils.pdf_utils import upload_pdf_to_backend, extract_text_from_pdf
+from .utils.file_utils import extract_text_from_file, extract_file_content
 
 # -------------------------------
 # Combined Send Logic
 # -------------------------------
-def send_message_or_pdf(message, history, token, pdf_file=None):
-    """Handle both normal messages and PDF uploads."""
+def send_message_or_pdf(message, history, token, uploaded_file=None):
     history = history or []
     if not token:
         history.append({"role": "assistant", "content": "⚠️ You must log in first!"})
-        return "", history
+        return "", history, None
 
     pdf_note = ""
     hidden_context = ""
 
-    # --- Handle PDF attachment ---
-    if pdf_file:
+    if uploaded_file:
         try:
-            with open(pdf_file.name, "rb") as f:
-                pdf_content = f.read()
-            extracted_text = extract_text_from_pdf(pdf_content)
+            content = extract_file_content(uploaded_file)
+            extracted_text = extract_text_from_file(content)
+
+            filename = getattr(uploaded_file, "name", "uploaded file")
 
             if extracted_text:
-                hidden_context = f"\n\n📄 [Attached PDF: {pdf_file.name}]\n\n{extracted_text[:3000]}"
-                pdf_note = f"📎 PDF '{pdf_file.name}' uploaded and processed."
+                hidden_context = f"\n\n📄 [Attached File: {filename}]\n\n{extracted_text[:3000]}"
+                pdf_note = f"📎 File '{filename}' uploaded and processed."
             else:
-                pdf_note = f"❌ Couldn't read text from PDF '{pdf_file.name}'."
+                pdf_note = f"❌ Couldn't read text from file '{filename}'."
         except Exception as e:
-            pdf_note = f"❌ Error processing PDF: {e}"
+            pdf_note = f"❌ Error processing file: {e}"
 
     message_to_backend = message + hidden_context
     headers = {"Authorization": f"Bearer {token}"}
@@ -53,7 +52,8 @@ def send_message_or_pdf(message, history, token, pdf_file=None):
     except Exception as e:
         history.append({"role": "assistant", "content": f"Exception: {e}"})
 
-    return "", history
+    # Clear message input and file input
+    return "", history, None
 
 
 # -------------------------------
@@ -137,6 +137,13 @@ def on_clear_click(token):
     return []
 
 
+def process_uploaded_file(file):
+    if not file:
+        return "No file uploaded."
+    content = extract_text_from_file(file)
+    return f"✅ Extracted {len(content)} characters from {file.name}"
+
+
 # -------------------------------
 # Gradio UI
 # -------------------------------
@@ -154,12 +161,12 @@ with gr.Blocks() as demo:
         margin-top: 6px;
     }
     .small-upload input[type="file"]::file-selector-button {
-        content: "Attach PDF";
+        content: "Attach Document";
     }
     """
 
     with gr.Row():
-        gr.Markdown("# 🧑‍💻 Keycloak Login & Chat + PDF Upload 💬", elem_id="page-title")
+        gr.Markdown("# 🧑‍💻 Keycloak Login & Chat + Document Upload 💬", elem_id="page-title")
         logout_btn = gr.Button("Logout", visible=False, elem_classes=["small-logout"])
 
     token_state = gr.State(None)
@@ -193,13 +200,14 @@ with gr.Blocks() as demo:
             send_btn = gr.Button("Send", scale=1)
             clear_btn = gr.Button("Clear Chat", scale=1)
 
-        # 📎 Small upload button below Send
-        pdf_file = gr.File(
-            label="Upload PDF (optional)",
-            file_types=[".pdf"],
+        file_input = gr.File(
+            label="Upload Document (PDF, Word, Excel, etc.)",
+            file_types=[".pdf", ".docx", ".xlsx", ".xls", ".txt", ".pptx", ".odt", ".rtf"],
             interactive=True,
             elem_classes=["small-upload"]
         )
+        # Optional: preview extracted text length on file change (you can comment this out if not needed)
+        file_input.change(fn=process_uploaded_file, inputs=file_input, outputs=None)
 
     # --- Button Bindings ---
     login_btn.click(
@@ -216,8 +224,8 @@ with gr.Blocks() as demo:
 
     send_btn.click(
         fn=send_message_or_pdf,
-        inputs=[msg, chatbot, token_state, pdf_file],
-        outputs=[msg, chatbot],
+        inputs=[msg, chatbot, token_state, file_input],
+        outputs=[msg, chatbot, file_input],  # Clear file input after send
     )
 
     clear_btn.click(
@@ -230,6 +238,7 @@ with gr.Blocks() as demo:
         fn=logout_action,
         outputs=[auth_section, chat_section, token_state, chatbot, login_status, logout_btn],
     )
+
 
 if __name__ == "__main__":
     demo.launch(server_name="0.0.0.0", server_port=7860)
