@@ -4,6 +4,7 @@ from .keycloak_client import keycloak_login  # existing util returning (token, e
 from .settings import API_URL, SIGNUP_URL, BASE_URL
 from datetime import datetime
 from .chat_history import format_message
+from .utils.pdf_utils import upload_pdf_to_backend
 
 # -------------------------------
 # Backend Chat Functions
@@ -214,6 +215,11 @@ with gr.Blocks() as demo:
         send_btn = gr.Button("Send")
         clear_btn = gr.Button("Clear Chat")
 
+        # --- PDF Upload UI ---
+        gr.Markdown("### 📄 Upload a PDF")
+        pdf_file = gr.File(label="Select PDF", file_types=[".pdf"])
+        upload_btn = gr.Button("Upload PDF")
+
     # --- Button bindings ---
     login_btn.click(
         fn=on_login_click,
@@ -248,6 +254,12 @@ with gr.Blocks() as demo:
     logout_btn.click(
         fn=logout_action,
         outputs=[auth_section, chat_section, token_state, chatbot, login_status, logout_btn],
+    )
+
+    upload_btn.click(
+        fn=upload_pdf_to_backend,
+        inputs=[pdf_file, token_state, chatbot],
+        outputs=[pdf_file, chatbot],
     )
 
 
