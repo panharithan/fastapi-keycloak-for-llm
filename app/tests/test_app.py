@@ -252,6 +252,7 @@ def test_send_message_positional_pdf(mock_post, fake_history, fake_token):
         history=fake_history,
         token=fake_token,
         uploaded_file=fake_pdf,
+        model="llama3.2"
     )
 
     # UI should NOT output text directly
@@ -280,6 +281,7 @@ def test_send_message_positional_no_pdf(mock_post, fake_history, fake_token):
         history=fake_history,
         token=fake_token,
         uploaded_file=None,
+        model="llama3.2"
     )
 
     # The UI returns an empty message; history stores the reply
