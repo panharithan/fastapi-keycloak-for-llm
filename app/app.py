@@ -149,7 +149,7 @@ async def generate_text(prompt: Prompt, user: dict = Depends(get_current_user)):
 
     # Save user and assistant messages
     save_user_message(username, "user", prompt.text)
-    save_user_message(username, "assistant", result)
+    save_user_message(username, "assistant", result, prompt.model)
 
     return {"response": result}
 

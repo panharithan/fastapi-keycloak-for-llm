@@ -69,12 +69,18 @@ def get_history_from_backend(username, token):
         if res.status_code == 200:
             data = res.json()
             messages = data.get("messages", [])
-            return [format_message(m["role"], m["content"], m.get("timestamp")) for m in messages]
+            return [
+                format_message(
+                    m["role"],
+                    m["content"],
+                    m.get("timestamp"),
+                    m.get("model")  # <-- pass model here
+                )
+                for m in messages
+            ]
         else:
-            # print("Failed to load history:", res.text)
             return []
     except Exception as e:
-        # print("Exception while fetching history:", e)
         return []
 
 
