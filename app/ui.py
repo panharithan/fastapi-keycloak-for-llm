@@ -6,9 +6,10 @@ from .chat_history import format_message
 from .utils.file_utils import extract_text_from_file, extract_file_content
 
 # -------------------------------
-# Combined Send Logic
+# Send Message + Optional PDF
 # -------------------------------
-def send_message_or_pdf(message, history, token, uploaded_file=None):
+
+def send_message_or_pdf(message, history, token, model, uploaded_file=None):
     history = history or []
     if not token:
         history.append({"role": "assistant", "content": "⚠️ You must log in first!"})
@@ -36,7 +37,7 @@ def send_message_or_pdf(message, history, token, uploaded_file=None):
     headers = {"Authorization": f"Bearer {token}"}
 
     try:
-        res = requests.post(API_URL, json={"text": message_to_backend}, headers=headers)
+        res = requests.post(API_URL, json={"text": message_to_backend, "model": model}, headers=headers)
         if res.status_code == 200:
             response = res.json().get("response", "")
             display_msg = message if not pdf_note else f"{message}\n\n{pdf_note}"
@@ -70,10 +71,10 @@ def get_history_from_backend(username, token):
             messages = data.get("messages", [])
             return [format_message(m["role"], m["content"], m.get("timestamp")) for m in messages]
         else:
-            print("Failed to load history:", res.text)
+            # print("Failed to load history:", res.text)
             return []
     except Exception as e:
-        print("Exception while fetching history:", e)
+        # print("Exception while fetching history:", e)
         return []
 
 
@@ -139,9 +140,10 @@ def on_clear_click(token):
 
 def process_uploaded_file(file):
     if not file:
-        return "No file uploaded."
+        return None
     content = extract_text_from_file(file)
-    return f"✅ Extracted {len(content)} characters from {file.name}"
+    return None
+    # return f"✅ Extracted {len(content)} characters from {file.name}"
 
 
 # -------------------------------
@@ -169,21 +171,21 @@ with gr.Blocks() as demo:
     """
 
     with gr.Row():
-        gr.Markdown("# 🧑‍💻 Keycloak Login & Chat + Document Upload 💬", elem_id="page-title")
-        logout_btn = gr.Button("Logout", visible=False, elem_classes=["small-logout"])
+        gr.Markdown("# 🧑‍💻 Keycloak Login & Chat + Document Upload 💬")
+        logout_btn = gr.Button("Logout", visible=False)
 
     token_state = gr.State(None)
 
-    # --- Authentication Section ---
+    # ------- Auth Section -------
     with gr.Group(visible=True) as auth_section:
-        with gr.Tab("🔐 Login"):
+        with gr.Tab("Login"):
             username_login = gr.Textbox(label="Username")
             password_login = gr.Textbox(label="Password", type="password")
             login_btn = gr.Button("Login")
             resend_btn = gr.Button("Resend Verification Email", visible=False)
             login_status = gr.Markdown()
 
-        with gr.Tab("🆕 Sign Up"):
+        with gr.Tab("Sign Up"):
             username_signup = gr.Textbox(label="Username")
             email_signup = gr.Textbox(label="Email")
             first_name_signup = gr.Textbox(label="First Name")
@@ -192,16 +194,24 @@ with gr.Blocks() as demo:
             signup_btn = gr.Button("Create Account")
             signup_status = gr.Markdown()
 
-    # --- Chat Section ---
+    # ------- Chat Section -------
     with gr.Group(visible=False) as chat_section:
         gr.Markdown("### Chat Interface")
+
+        # ------- Model Selector -------
+        model_selector = gr.Dropdown(
+            choices=["llama3.2", "gemma3"],
+            value="llama3.2",
+            label="Select LLM Model",
+        )
+
         chatbot = gr.Chatbot(type="messages")
 
-        msg = gr.Textbox(label="💬 Message", placeholder="Type your message here...")
+        msg = gr.Textbox(label="Message")
 
         with gr.Row():
-            send_btn = gr.Button("Send", scale=1)
-            clear_btn = gr.Button("Clear Chat", scale=1)
+            send_btn = gr.Button("Send")
+            clear_btn = gr.Button("Clear Chat")
 
         file_input = gr.File(
             label="Upload Document (PDF, Word, Excel, etc.)",
@@ -227,7 +237,8 @@ with gr.Blocks() as demo:
 
     send_btn.click(
         fn=send_message_or_pdf,
-        inputs=[msg, chatbot, token_state, file_input],
+        inputs=[msg, chatbot, token_state, model_selector, file_input],
+        # inputs=[msg, chatbot, token_state, model_selector, file_input],
         outputs=[msg, chatbot, file_input],  # Clear file input after send
     )
 
