@@ -151,8 +151,11 @@ with gr.Blocks() as demo:
     demo.css = """
     .small-logout {
         padding: 2px 6px !important;
-        font-size: 16px !important;
-        min-width: auto !important;
+        font-size: 14px !important;
+        min-width: fit-content !important;
+        width: fit-content !important;
+        display: inline-block !important;
+        flex-grow: 0 !important;
     }
     .small-upload {
         padding: 4px 8px !important;
