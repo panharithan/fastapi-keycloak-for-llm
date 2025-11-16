@@ -1,9 +1,12 @@
 import pytest
 import json
+import io
 from fastapi.testclient import TestClient
 from unittest.mock import patch
 from fastapi import HTTPException  
 from app.app import app, decode_jwt, greet, get_authenticated_username  # import FastAPI instance and functions from app/app.py
+from unittest.mock import patch, MagicMock
+from app.ui import send_message_or_pdf
 
 client = TestClient(app)
 
@@ -217,3 +220,74 @@ def test_get_authenticated_username_extra_fields():
     user = {"preferred_username": "alice", "email": "alice@example.com", "role": "admin"}
     result = get_authenticated_username(user)
     assert result == "alice"
+
+
+@pytest.fixture
+def fake_history():
+    return [{"role": "user", "content": "hello"}]
+
+
+@pytest.fixture
+def fake_token():
+    return "FAKE_TOKEN_123"
+
+
+# -----------------------------------------
+# TEST 1: PDF upload message flow
+# -----------------------------------------
+@patch("app.ui.requests.post")
+def test_send_message_positional_pdf(mock_post, fake_history, fake_token):
+    mock_post.return_value.status_code = 200
+    mock_post.return_value.json.return_value = {
+        "message": "File uploaded",
+        "summary": "short summary"
+    }
+
+    import io
+    fake_pdf = io.BytesIO(b"%PDF-1.4 fake content")
+    fake_pdf.name = "doc.pdf"
+
+    msg, history, pdf_summary = send_message_or_pdf(
+        message="",
+        history=fake_history,
+        token=fake_token,
+        uploaded_file=fake_pdf,
+    )
+
+    # UI should NOT output text directly
+    assert msg == ""
+
+    # History should remain the same length if function doesn't append anything
+    assert len(history) == 3  # unchanged from fake_history
+    assert history[-1]["role"] == "assistant"
+
+    # Check PDF summary returned from backend
+    if pdf_summary:
+        assert pdf_summary == "short summary"
+
+    # Backend endpoint was called
+    assert mock_post.called
+# -----------------------------------------
+# TEST 2: No PDF, normal message
+# -----------------------------------------
+@patch("app.ui.requests.post")
+def test_send_message_positional_no_pdf(mock_post, fake_history, fake_token):
+    mock_post.return_value.status_code = 200
+    mock_post.return_value.json.return_value = {"response": "reply from LLM"}
+
+    msg, history, _ = send_message_or_pdf(
+        message="hello model",
+        history=fake_history,
+        token=fake_token,
+        uploaded_file=None,
+    )
+
+    # The UI returns an empty message; history stores the reply
+    assert msg == ""
+
+    assert len(history) == 3
+    assert history[-1]["role"] == "assistant"
+    assert history[-1]["content"] == "reply from LLM"
+
+    # Called `/generate`
+    assert mock_post.called

@@ -4,20 +4,21 @@ import re
 import base64
 import json
 import requests
-from fastapi import FastAPI, Depends, HTTPException, status, Query, Body
+from fastapi import FastAPI, Depends, HTTPException, status, Query, Body, File, UploadFile
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from starlette.requests import Request
 from pydantic import BaseModel, EmailStr, field_validator
+
 import gradio as gr
 from .keycloak_utils import verify_token
 from .llm import get_response
 from .email_utils import send_verification_email
 from .settings import keycloak_admin, PUBLIC_BASE_URL, KEYCLOAK_URL, REALM, CLIENT_ID, CLIENT_SECRET, KEYCLOAK_TOKEN_URL
 from .chat_history import get_user_history, save_user_message, clear_history
-
+from .utils.file_utils import extract_text_from_file
 
 # -------------------------------
 # Validation Model
@@ -96,8 +97,46 @@ def secure_data(user: dict = Depends(get_current_user)):
 # -------------------------------
 # LLM Endpoint
 # -------------------------------
+
+def summarize_text(text: str, max_len: int = 1000):
+    if len(text) <= max_len:
+        return text
+    return text[:max_len] + "..."
+
 class Prompt(BaseModel):
     text: str
+
+@app.post("/upload-file")
+async def upload_file(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
+    """
+    Extract full text from PDF, summarize, and store to MongoDB
+    as part of the user’s chat history (role='system').
+    """
+    username = get_authenticated_username(user)
+
+    # 1️⃣ Extract text
+    content = await file.read()
+    pdf_text = extract_text_from_file(content)
+
+    if not pdf_text:
+        return {"status": "error", "message": "❌ No readable text found in PDF."}
+
+    # 2️⃣ Save extracted text as context
+    pdf_content_entry = f"[PDF Uploaded: {file.filename}]\n\n{pdf_text[:3000]}"
+    save_user_message(username, "system", pdf_content_entry)
+
+    # 3️⃣ Summarize
+    summary = summarize_text(pdf_text)
+
+    # 4️⃣ Optional: append summary to DB too
+    save_user_message(username, "assistant", f"📄 Summary of {file.filename}:\n{summary}")
+
+    # 5️⃣ Return success
+    return {
+        "status": "success",
+        "message": f"✅ PDF '{file.filename}' processed and added to your context.",
+        "summary": summary,
+    }
 
 
 @app.post("/generate")
@@ -348,6 +387,12 @@ def clear_user_history(user: dict = Depends(get_current_user)):
     username = get_authenticated_username(user)
     clear_history(username)
     return {"message": "Chat history cleared successfully."}
+
+@app.post("/upload-file")
+async def upload_file(file: UploadFile = File(...), user=Depends(verify_token)):
+    content = await file.read()
+    text = extract_text_from_file(content)  # your File parsing logic
+    return {"message": "File uploaded", "summary": summarize_text(text)}
 
 
 gradio_app = gr.Interface(fn=greet, inputs="text", outputs="text")
