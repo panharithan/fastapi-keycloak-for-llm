@@ -57,7 +57,8 @@ Create a .env file to store sensitive parameters.
 | Variable          | Description                                                                 |
 |-------------------|-----------------------------------------------------------------------------|
 | OLLAMA_API_URL    | The local API endpoint for Ollama used by the app to generate responses. Set to `http://host.docker.internal:11434/api/generate` to allow Docker containers to access the host’s Ollama instance. |
-| MODEL             | The default model name used by Ollama for text generation, e.g., `llama3.2`. |
+| AVAILABLE_MODELS             | The models name used by Ollama for text generation, e.g., `["llama3.2", "gemma3"]` |
+
 
 
 ### Email Configuration
@@ -159,7 +160,7 @@ PUBLIC_BASE_URL=http://localhost:8000 # for local dev & non-production Docker en
 
 # LLM / Ollama
 OLLAMA_API_URL=http://localhost:11434/api/generate
-MODEL=llama3.2
+AVAILABLE_MODELS=["llama3.2", "gemma3"]
 
 # Optional Timezone and Format (defaults set in settings.py)
 TIMEZONE=Europe/Berlin

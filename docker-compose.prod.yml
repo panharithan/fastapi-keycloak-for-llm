@@ -35,7 +35,7 @@ services:
 
       # LLM API
       OLLAMA_API_URL: "${OLLAMA_API_URL}"
-      MODEL: "${MODEL}"
+      AVAILABLE_MODELS: "${AVAILABLE_MODELS}"
 
       # Base URLs
       INTERNAL_BASE_URL: "http://fastapi-keycloak-app:8000"

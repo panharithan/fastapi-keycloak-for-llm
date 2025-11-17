@@ -31,6 +31,10 @@ services:
       MONGO_DB: ${MONGO_DB}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
 
+      # LLM API
+      OLLAMA_API_URL: "${OLLAMA_API_URL}"
+      AVAILABLE_MODELS: "${AVAILABLE_MODELS}"
+
     networks:
       - llm-net
     extra_hosts:
