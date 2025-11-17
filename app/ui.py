@@ -174,11 +174,19 @@ with gr.Blocks() as demo:
     .small-upload input[type="file"]::file-selector-button {
         content: "Attach Document";
     }
+    .compact-dropdown .wrap {
+        width: auto !important;
+        min-width: fit-content !important;
+        display: inline-flex !important;
+    }
+    .compact-dropdown select {
+        width: auto !important;
+    }
     """
 
     with gr.Row():
         gr.Markdown("# 🧑‍💻 Keycloak Login & Chat + Document Upload 💬")
-        logout_btn = gr.Button("Logout", visible=False)
+        logout_btn = gr.Button("Logout", visible=False, elem_classes=["small-logout"],)
 
     token_state = gr.State(None)
 
@@ -209,6 +217,7 @@ with gr.Blocks() as demo:
             choices=["llama3.2", "gemma3"],
             value="llama3.2",
             label="Select LLM Model",
+            elem_classes=["compact-dropdown"],
         )
 
         chatbot = gr.Chatbot(type="messages")
