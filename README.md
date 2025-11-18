@@ -86,7 +86,7 @@ Create a .env file to store sensitive parameters.
 | Variable          | Description                                                                 |
 |-------------------|-----------------------------------------------------------------------------|
 | OLLAMA_API_URL    | The local API endpoint for Ollama used by the app to generate responses. Set to `http://host.docker.internal:11434/api/generate` to allow Docker containers to access the host’s Ollama instance. |
-| AVAILABLE_MODELS             | The models name used by Ollama for text generation, e.g., `["llama3.2", "gemma3"]` |
+| AVAILABLE_MODELS             | The models name used by Ollama for text generation, e.g., `llama3.2,gemma3,phi3` |
 
 
 ### Email Configuration
@@ -168,7 +168,7 @@ Full example of .env for non-production Docker compose file
 ```
 # for docker variables and deployment. Variable names are the same to app/.env (development)
 OLLAMA_API_URL = "http://host.docker.internal:11434/api/generate"
-AVAILABLE_MODELS=["llama3.2", "gemma3"]
+AVAILABLE_MODELS=llama3.2,gemma3,phi3
 
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
@@ -201,7 +201,7 @@ Full .env file for production Docker Compose with Nginx as reverse proxy. Assumi
 ```
 # for docker variables and deployment. Variable names are the same to app/.env (development)
 OLLAMA_API_URL = "http://host.docker.internal:11434/api/generate"
-AVAILABLE_MODELS=["llama3.2", "gemma3"]
+AVAILABLE_MODELS=llama3.2,gemma3,phi3
 
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587

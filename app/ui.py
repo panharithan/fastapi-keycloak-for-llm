@@ -1,4 +1,5 @@
 import gradio as gr
+import os
 import requests
 from .keycloak_client import keycloak_login
 from .settings import API_URL, SIGNUP_URL, BASE_URL
@@ -8,6 +9,8 @@ from .utils.file_utils import extract_text_from_file, extract_file_content
 # -------------------------------
 # Send Message + Optional PDF
 # -------------------------------
+models_env = os.getenv("AVAILABLE_MODELS", "")
+AVAILABLE_MODELS = [m.strip() for m in models_env.split(",") if m.strip()]
 
 def send_message_or_pdf(message, history, token, model, uploaded_file=None):
     history = history or []
@@ -214,7 +217,7 @@ with gr.Blocks() as demo:
 
         # ------- Model Selector -------
         model_selector = gr.Dropdown(
-            choices=["llama3.2", "gemma3"],
+            choices=AVAILABLE_MODELS,
             value="llama3.2",
             label="Select LLM Model",
             elem_classes=["compact-dropdown"],
