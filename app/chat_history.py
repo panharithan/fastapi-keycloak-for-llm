@@ -18,32 +18,38 @@ def decrypt_message(token: str) -> str:
         return token
 
 
-def format_message(role, content, timestamp=None):
+def format_message(role, content, timestamp=None, model=None):
     """Return formatted chat message with TIMEZONE-aware timestamp"""
     if timestamp:
-        # Parse ISO8601 timestamp from backend or MongoDB
         dt = datetime.fromisoformat(timestamp)
         dt = dt.replace(tzinfo=pytz.UTC).astimezone(TIMEZONE)
     else:
         dt = datetime.utcnow().replace(tzinfo=pytz.UTC).astimezone(TIMEZONE)
 
     formatted_ts = dt.strftime(DATE_TIME_FORMAT)
+
+    # Show model only for assistant messages
+    model_label = f" | {model}" if role == "assistant" and model else ""
+
     formatted_content = (
         f"{content}\n\n"
-        f"<span style='font-size:0.8em; color:gray;'>🕒 {formatted_ts}</span>"
+        f"<span style='font-size:0.8em; color:gray;'>🕒 {formatted_ts}{model_label}</span>"
     )
     return {"role": role, "content": formatted_content}
 
 
-def save_user_message(username: str, role: str, content: str):
+def save_user_message(username: str, role: str, content: str, model: str = None):
     """Encrypt and store chat message in MongoDB"""
     encrypted_content = encrypt_message(content)
-    chats.insert_one({
+    dict = {
         "username": username,
         "role": role,
         "content": encrypted_content,
         "timestamp": datetime.utcnow(),
-    })
+    }
+    if model:
+        dict["model"] = model
+    chats.insert_one(dict)
 
 
 def get_user_history(username):
@@ -61,6 +67,7 @@ def get_user_history(username):
         results.append({
             "role": msg.get("role", "user"),
             "content": content,
+            "model": msg.get("model"),
             "timestamp": msg.get("timestamp", datetime.utcnow()).isoformat(),
         })
 

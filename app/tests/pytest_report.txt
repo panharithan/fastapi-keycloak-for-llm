@@ -5,87 +5,96 @@ rootdir: /Users/panharith/Documents/code/python/fastapi-keycloak-for-llm
 configfile: pytest.ini
 plugins: mock-3.15.1, asyncio-1.2.0, anyio-4.11.0, cov-7.0.0
 asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collecting ... collected 85 items
+collecting ... collected 94 items
 
 tests/test_app.py::test_decode_jwt_invalid_structure PASSED              [  1%]
 tests/test_app.py::test_decode_jwt_invalid_base64 PASSED                 [  2%]
 tests/test_app.py::test_decode_jwt_valid PASSED                          [  3%]
 tests/test_app.py::test_login_email_not_verified PASSED                  [  4%]
 tests/test_app.py::test_login_userinfo_missing_email_verified PASSED     [  5%]
-tests/test_app.py::test_login_userinfo_fallback_unverified PASSED        [  7%]
-tests/test_app.py::test_signup_user_not_found_after_creation PASSED      [  8%]
-tests/test_app.py::test_signup_role_not_found PASSED                     [  9%]
-tests/test_app.py::test_resend_verification_already_verified PASSED      [ 10%]
-tests/test_app.py::test_verify_invalid_token PASSED                      [ 11%]
-tests/test_app.py::test_validation_handler_custom_format PASSED          [ 12%]
-tests/test_app.py::test_greet_function PASSED                            [ 14%]
-tests/test_app.py::test_get_authenticated_username_valid_user PASSED     [ 15%]
-tests/test_app.py::test_get_authenticated_username_missing_key PASSED    [ 16%]
-tests/test_app.py::test_get_authenticated_username_empty_string PASSED   [ 17%]
-tests/test_app.py::test_get_authenticated_username_none_value PASSED     [ 18%]
-tests/test_app.py::test_get_authenticated_username_extra_fields PASSED   [ 20%]
-tests/test_app.py::test_send_message_positional_pdf PASSED               [ 21%]
-tests/test_app.py::test_send_message_positional_no_pdf PASSED            [ 22%]
-tests/test_app_extra.py::test_secure_endpoint_unauthenticated PASSED     [ 23%]
-tests/test_app_extra.py::test_signup_keycloak_create_user_failure PASSED [ 24%]
-tests/test_app_extra.py::test_signup_user_not_found_after_creation PASSED [ 25%]
-tests/test_app_extra.py::test_signup_role_not_found PASSED               [ 27%]
-tests/test_app_extra.py::test_verify_invalid_token PASSED                [ 28%]
-tests/test_app_extra.py::test_resend_verification_user_not_found PASSED  [ 29%]
-tests/test_app_extra.py::test_resend_verification_no_email PASSED        [ 30%]
-tests/test_app_extra.py::test_resend_verification_email_already_verified PASSED [ 31%]
-tests/test_app_extra.py::test_validation_exception_handler PASSED        [ 32%]
-tests/test_app_extra.py::test_gradio_ui_root PASSED                      [ 34%]
-tests/test_app_extra.py::test_invalid_username_pattern PASSED            [ 35%]
-tests/test_app_extra.py::test_invalid_password_missing_uppercase PASSED  [ 36%]
-tests/test_app_extra.py::test_invalid_first_name_pattern PASSED          [ 37%]
-tests/test_app_extra.py::test_invalid_last_name_pattern PASSED           [ 38%]
-tests/test_app_extra.py::test_get_current_user_invalid_token PASSED      [ 40%]
-tests/test_app_extra.py::test_decode_jwt_invalid_structure PASSED        [ 41%]
-tests/test_app_extra.py::test_resend_verification_success PASSED         [ 42%]
-tests/test_app_extra.py::test_validation_exception_handler_direct PASSED [ 43%]
-tests/test_app_extra.py::test_signupdata_valid_data PASSED               [ 44%]
-tests/test_app_extra.py::test_get_current_user_success PASSED            [ 45%]
-tests/test_app_extra.py::test_decode_jwt_success PASSED                  [ 47%]
-tests/test_app_extra.py::test_signupdata_valid_first_and_last_name PASSED [ 48%]
-tests/test_app_extra.py::test_get_current_user_exception_path PASSED     [ 49%]
-tests/test_app_extra.py::test_decode_jwt_invalid_base64_exception PASSED [ 50%]
-tests/test_app_extra.py::test_resend_verification_token_assignment PASSED [ 51%]
-tests/test_app_extra.py::test_username_too_short_or_long PASSED          [ 52%]
-tests/test_app_extra.py::test_password_missing_requirements PASSED       [ 54%]
-tests/test_app_extra.py::test_names_with_invalid_chars PASSED            [ 55%]
-tests/test_app_extra.py::test_resend_verification_send_email_failure PASSED [ 56%]
-tests/test_app_extra.py::test_validation_exception_handler_no_errors PASSED [ 57%]
-tests/test_chat_history.py::test_chat_endpoint PASSED                    [ 58%]
-tests/test_chat_history.py::test_get_history_endpoint PASSED             [ 60%]
-tests/test_chat_history.py::test_clear_history_endpoint PASSED           [ 61%]
-tests/test_chat_history.py::test_encrypt_message_returns_encrypted_string PASSED [ 62%]
-tests/test_chat_history.py::test_decrypt_message_returns_original_text PASSED [ 63%]
-tests/test_chat_history.py::test_decrypt_message_handles_unencrypted_input PASSED [ 64%]
-tests/test_chat_history.py::test_encryption_is_reversible_with_same_key PASSED [ 65%]
-tests/test_chat_history.py::test_invalid_token_does_not_raise_error PASSED [ 67%]
-tests/test_chat_history_module.py::test_format_message_without_timestamp PASSED [ 68%]
-tests/test_chat_history_module.py::test_format_message_with_timestamp PASSED [ 69%]
-tests/test_chat_history_module.py::test_save_user_message_inserts PASSED [ 70%]
-tests/test_chat_history_module.py::test_get_user_history_returns_sorted PASSED [ 71%]
-tests/test_chat_history_module.py::test_get_user_history_backward_compatibility PASSED [ 72%]
-tests/test_chat_history_module.py::test_clear_history_deletes PASSED     [ 74%]
-tests/test_email_utils.py::test_send_verification_email_success PASSED   [ 75%]
-tests/test_email_utils.py::test_send_verification_email_failure PASSED   [ 76%]
-tests/test_keycloak_utils.py::test_get_public_key_success PASSED         [ 77%]
-tests/test_keycloak_utils.py::test_verify_token_success PASSED           [ 78%]
-tests/test_keycloak_utils.py::test_verify_token_missing_key PASSED       [ 80%]
-tests/test_keycloak_utils.py::test_verify_token_decode_error PASSED      [ 81%]
-tests/test_llm.py::test_get_response_success PASSED                      [ 82%]
-tests/test_llm.py::test_get_response_no_response_key PASSED              [ 83%]
-tests/test_llm.py::test_get_response_raises_exception PASSED             [ 84%]
-tests/test_ui.py::test_has_login_components PASSED                       [ 85%]
-tests/test_ui.py::test_login_returns_expected_values PASSED              [ 87%]
-tests/test_ui.py::test_signup_returns_status PASSED                      [ 88%]
-tests/test_ui.py::test_logout_action PASSED                              [ 89%]
-tests/test_ui.py::test_clear_btn PASSED                                  [ 90%]
-tests/test_ui.py::test_ui_launches PASSED                                [ 91%]
-tests/test_ui.py::test_has_chatbot PASSED                                [ 92%]
+tests/test_app.py::test_login_userinfo_fallback_unverified PASSED        [  6%]
+tests/test_app.py::test_signup_user_not_found_after_creation PASSED      [  7%]
+tests/test_app.py::test_signup_role_not_found PASSED                     [  8%]
+tests/test_app.py::test_resend_verification_already_verified PASSED      [  9%]
+tests/test_app.py::test_verify_invalid_token PASSED                      [ 10%]
+tests/test_app.py::test_validation_handler_custom_format PASSED          [ 11%]
+tests/test_app.py::test_greet_function PASSED                            [ 12%]
+tests/test_app.py::test_get_authenticated_username_valid_user PASSED     [ 13%]
+tests/test_app.py::test_get_authenticated_username_missing_key PASSED    [ 14%]
+tests/test_app.py::test_get_authenticated_username_empty_string PASSED   [ 15%]
+tests/test_app.py::test_get_authenticated_username_none_value PASSED     [ 17%]
+tests/test_app.py::test_get_authenticated_username_extra_fields PASSED   [ 18%]
+tests/test_app.py::test_send_message_positional_pdf PASSED               [ 19%]
+tests/test_app.py::test_send_message_positional_no_pdf PASSED            [ 20%]
+tests/test_app_extra.py::test_secure_endpoint_unauthenticated PASSED     [ 21%]
+tests/test_app_extra.py::test_signup_keycloak_create_user_failure PASSED [ 22%]
+tests/test_app_extra.py::test_signup_user_not_found_after_creation PASSED [ 23%]
+tests/test_app_extra.py::test_signup_role_not_found PASSED               [ 24%]
+tests/test_app_extra.py::test_verify_invalid_token PASSED                [ 25%]
+tests/test_app_extra.py::test_resend_verification_user_not_found PASSED  [ 26%]
+tests/test_app_extra.py::test_resend_verification_no_email PASSED        [ 27%]
+tests/test_app_extra.py::test_resend_verification_email_already_verified PASSED [ 28%]
+tests/test_app_extra.py::test_validation_exception_handler PASSED        [ 29%]
+tests/test_app_extra.py::test_gradio_ui_root PASSED                      [ 30%]
+tests/test_app_extra.py::test_invalid_username_pattern PASSED            [ 31%]
+tests/test_app_extra.py::test_invalid_password_missing_uppercase PASSED  [ 32%]
+tests/test_app_extra.py::test_invalid_first_name_pattern PASSED          [ 34%]
+tests/test_app_extra.py::test_invalid_last_name_pattern PASSED           [ 35%]
+tests/test_app_extra.py::test_get_current_user_invalid_token PASSED      [ 36%]
+tests/test_app_extra.py::test_decode_jwt_invalid_structure PASSED        [ 37%]
+tests/test_app_extra.py::test_resend_verification_success PASSED         [ 38%]
+tests/test_app_extra.py::test_validation_exception_handler_direct PASSED [ 39%]
+tests/test_app_extra.py::test_signupdata_valid_data PASSED               [ 40%]
+tests/test_app_extra.py::test_get_current_user_success PASSED            [ 41%]
+tests/test_app_extra.py::test_decode_jwt_success PASSED                  [ 42%]
+tests/test_app_extra.py::test_signupdata_valid_first_and_last_name PASSED [ 43%]
+tests/test_app_extra.py::test_get_current_user_exception_path PASSED     [ 44%]
+tests/test_app_extra.py::test_decode_jwt_invalid_base64_exception PASSED [ 45%]
+tests/test_app_extra.py::test_resend_verification_token_assignment PASSED [ 46%]
+tests/test_app_extra.py::test_username_too_short_or_long PASSED          [ 47%]
+tests/test_app_extra.py::test_password_missing_requirements PASSED       [ 48%]
+tests/test_app_extra.py::test_names_with_invalid_chars PASSED            [ 50%]
+tests/test_app_extra.py::test_resend_verification_send_email_failure PASSED [ 51%]
+tests/test_app_extra.py::test_validation_exception_handler_no_errors PASSED [ 52%]
+tests/test_chat_history.py::test_chat_endpoint PASSED                    [ 53%]
+tests/test_chat_history.py::test_get_history_endpoint PASSED             [ 54%]
+tests/test_chat_history.py::test_clear_history_endpoint PASSED           [ 55%]
+tests/test_chat_history.py::test_encrypt_message_returns_encrypted_string PASSED [ 56%]
+tests/test_chat_history.py::test_decrypt_message_returns_original_text PASSED [ 57%]
+tests/test_chat_history.py::test_decrypt_message_handles_unencrypted_input PASSED [ 58%]
+tests/test_chat_history.py::test_encryption_is_reversible_with_same_key PASSED [ 59%]
+tests/test_chat_history.py::test_invalid_token_does_not_raise_error PASSED [ 60%]
+tests/test_chat_history_module.py::test_format_message_without_timestamp PASSED [ 61%]
+tests/test_chat_history_module.py::test_format_message_with_timestamp PASSED [ 62%]
+tests/test_chat_history_module.py::test_save_user_message_inserts PASSED [ 63%]
+tests/test_chat_history_module.py::test_get_user_history_returns_sorted PASSED [ 64%]
+tests/test_chat_history_module.py::test_get_user_history_backward_compatibility PASSED [ 65%]
+tests/test_chat_history_module.py::test_clear_history_deletes PASSED     [ 67%]
+tests/test_chat_history_module.py::test_format_message_assistant_with_model PASSED [ 68%]
+tests/test_chat_history_module.py::test_format_message_assistant_without_model PASSED [ 69%]
+tests/test_chat_history_module.py::test_format_message_user_model_ignored PASSED [ 70%]
+tests/test_chat_history_module.py::test_save_user_message_includes_model PASSED [ 71%]
+tests/test_chat_history_module.py::test_save_user_message_without_model PASSED [ 72%]
+tests/test_chat_history_module.py::test_get_user_history_returns_model PASSED [ 73%]
+tests/test_chat_history_module.py::test_encrypt_decrypt_roundtrip PASSED [ 74%]
+tests/test_chat_history_module.py::test_decrypt_fallback_plaintext PASSED [ 75%]
+tests/test_chat_history_module.py::test_clear_history_calls_delete PASSED [ 76%]
+tests/test_email_utils.py::test_send_verification_email_success PASSED   [ 77%]
+tests/test_email_utils.py::test_send_verification_email_failure PASSED   [ 78%]
+tests/test_keycloak_utils.py::test_get_public_key_success PASSED         [ 79%]
+tests/test_keycloak_utils.py::test_verify_token_success PASSED           [ 80%]
+tests/test_keycloak_utils.py::test_verify_token_missing_key PASSED       [ 81%]
+tests/test_keycloak_utils.py::test_verify_token_decode_error PASSED      [ 82%]
+tests/test_llm.py::test_get_response_success PASSED                      [ 84%]
+tests/test_llm.py::test_get_response_no_response_key PASSED              [ 85%]
+tests/test_llm.py::test_get_response_raises_exception PASSED             [ 86%]
+tests/test_ui.py::test_has_login_components PASSED                       [ 87%]
+tests/test_ui.py::test_login_returns_expected_values PASSED              [ 88%]
+tests/test_ui.py::test_signup_returns_status PASSED                      [ 89%]
+tests/test_ui.py::test_logout_action PASSED                              [ 90%]
+tests/test_ui.py::test_clear_btn PASSED                                  [ 91%]
+tests/test_ui.py::test_ui_launches PASSED                                [ 92%]
+tests/test_ui.py::test_has_chatbot PASSED                                [ 93%]
 tests/test_ui.py::test_has_message_box PASSED                            [ 94%]
 tests/test_ui.py::test_send_message_positional_pdf PASSED                [ 95%]
 tests/test_ui.py::test_send_message_positional_no_pdf PASSED             [ 96%]
@@ -105,8 +114,8 @@ _______________ coverage: platform darwin, python 3.11.3-final-0 _______________
 Name                                Stmts   Miss  Cover   Missing
 -----------------------------------------------------------------
 __init__.py                             0      0   100%
-app.py                                225     32    86%   94, 102-104, 115-135, 144-153, 196, 275-282, 289-291, 393-395
-chat_history.py                        35      2    94%   58-59
+app.py                                221     29    87%   94, 102-104, 116-136, 145-154, 197, 276-283, 290-292
+chat_history.py                        39      2    95%   64-65
 db.py                                  11      0   100%
 email_utils.py                         19      0   100%
 keycloak_client.py                     40     29    28%   8-20, 35-56
@@ -115,17 +124,17 @@ llm.py                                  8      0   100%
 settings.py                            43      2    95%   67-68
 tests/__init__.py                       0      0   100%
 tests/conftest.py                       0      0   100%
-tests/test_app.py                     143      1    99%   266
+tests/test_app.py                     143      1    99%   267
 tests/test_app_extra.py               180      1    99%   339
 tests/test_chat_history.py             74      0   100%
-tests/test_chat_history_module.py      59      0   100%
+tests/test_chat_history_module.py     116      2    98%   23-24
 tests/test_email_utils.py              39      0   100%
 tests/test_keycloak_utils.py           37      0   100%
 tests/test_llm.py                      39      0   100%
 tests/test_ui.py                       57      1    98%   124
 tests/test_verification.py             16      0   100%
-ui.py                                 114     30    74%   14-15, 31, 48-53, 63-77, 83-84, 127-130, 141-144, 244
-utils/file_utils.py                    43     17    60%   19-21, 35-53, 59
+ui.py                                 113     32    72%   15-16, 26-32, 49-54, 64-84, 90-91, 134-137, 148-151, 264
+utils/file_utils.py                    43     29    33%   11-13, 19-21, 29-63
 -----------------------------------------------------------------
-TOTAL                                1200    115    90%
-======================== 85 passed, 1 warning in 3.25s =========================
+TOTAL                                1256    128    90%
+======================== 94 passed, 1 warning in 3.26s =========================

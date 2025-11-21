@@ -105,6 +105,7 @@ def summarize_text(text: str, max_len: int = 1000):
 
 class Prompt(BaseModel):
     text: str
+    model:str
 
 @app.post("/upload-file")
 async def upload_file(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
@@ -144,11 +145,11 @@ async def generate_text(prompt: Prompt, user: dict = Depends(get_current_user)):
     username = get_authenticated_username(user)
 
     # Call LLM kernel
-    result = get_response(prompt.text)
+    result = get_response(prompt.text, prompt.model)
 
     # Save user and assistant messages
     save_user_message(username, "user", prompt.text)
-    save_user_message(username, "assistant", result)
+    save_user_message(username, "assistant", result, prompt.model)
 
     return {"response": result}
 
@@ -387,12 +388,6 @@ def clear_user_history(user: dict = Depends(get_current_user)):
     username = get_authenticated_username(user)
     clear_history(username)
     return {"message": "Chat history cleared successfully."}
-
-@app.post("/upload-file")
-async def upload_file(file: UploadFile = File(...), user=Depends(verify_token)):
-    content = await file.read()
-    text = extract_text_from_file(content)  # your File parsing logic
-    return {"message": "File uploaded", "summary": summarize_text(text)}
 
 
 gradio_app = gr.Interface(fn=greet, inputs="text", outputs="text")
